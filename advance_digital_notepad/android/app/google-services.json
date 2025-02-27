@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "76751527402",
+    "project_id": "advancedigitalnotepad",
+    "storage_bucket": "advancedigitalnotepad.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:76751527402:android:a36c6711d7067b04ade693",
+        "android_client_info": {
+          "package_name": "com.example.advance_digital_notepad"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDhn-xgiBB5HQ2_dfejFAHVKtassWRjUmw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
