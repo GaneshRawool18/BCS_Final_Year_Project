@@ -11,6 +11,8 @@ dependencies:
   firebase_auth: ^5.4.2
   firebase_core: ^3.11.0
   firebase_storage: ^12.4.2
+  fl_chart: 0.63.0 # Use this stable version
+
   flutter:
     sdk: flutter
   flutter_svg: ^2.0.17
