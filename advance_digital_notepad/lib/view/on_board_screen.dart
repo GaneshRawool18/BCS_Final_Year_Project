@@ -39,7 +39,7 @@ class _OnboardScreenState extends State<OnboardScreen> {
                 },
               ),
               Onboard(
-                image: "assets/images/note.png",
+                image: "assets/images/launchScreen2.png",
                 title: "Stay Organized, Stay Productive",
                 description:
                     "Your ideas, your notepad—seamless, smart, and always with you!",
@@ -52,7 +52,7 @@ class _OnboardScreenState extends State<OnboardScreen> {
                 },
               ),
               Onboard(
-                image: "assets/images/note.png",
+                image: "assets/images/launchScreen3.png",
                 title: "Smart Notetaking, Simplified",
                 description:
                     "Write, sketch, and organize—all in one smart notepad. Elevate your notes!",

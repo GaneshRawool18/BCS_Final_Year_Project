@@ -7,7 +7,6 @@ import 'package:firebase_storage/firebase_storage.dart';
 
 import 'package:google_sign_in/google_sign_in.dart';
 
-
 String? downLoadUrl;
 
 class FirebaseServices {
@@ -82,6 +81,15 @@ class FirebaseServices {
         .signInWithEmailAndPassword(email: email, password: password);
     log("login up successfully");
     log(email);
+  }
+
+  static Future<void> signOutUser() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      log("User signed out successfully");
+    } catch (e) {
+      log("Error signing out: $e");
+    }
   }
 
   static Future loginWithGoogle() async {

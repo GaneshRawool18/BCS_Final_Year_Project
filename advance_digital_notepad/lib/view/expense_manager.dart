@@ -30,12 +30,12 @@ class _ExpenseManagerState extends State<ExpenseManager> {
       isScrollControlled: true,
       context: context,
       builder: (context) {
-        return Padding(
+        return SingleChildScrollView(
           padding: EdgeInsets.only(
             left: 15,
             right: 15,
             top: 15,
-            bottom: MediaQuery.of(context).viewInsets.bottom,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 15,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -51,8 +51,8 @@ class _ExpenseManagerState extends State<ExpenseManager> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 30, vertical: 10),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -96,6 +96,7 @@ class _ExpenseManagerState extends State<ExpenseManager> {
     return Scaffold(
       key: _scaffoldKey,
       drawer: const CustomDrawer(),
+      resizeToAvoidBottomInset: true, // Prevents keyboard overflow
       body: Column(
         children: [
           _buildHeader(),
@@ -138,8 +139,7 @@ class _ExpenseManagerState extends State<ExpenseManager> {
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: ListTile(
             leading: Icon(
-              items[index]["icon"]
-                  as IconData, // Explicitly casting to IconData
+              items[index]["icon"] as IconData,
               size: 30,
               color: Colors.green,
             ),

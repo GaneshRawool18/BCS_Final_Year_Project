@@ -66,10 +66,16 @@ class Onboard extends StatelessWidget {
                     child: Container(
                       width: MediaQuery.of(context).size.width,
                       height: MediaQuery.of(context).size.height * 0.07,
-                      decoration: BoxDecoration(
-                        color: const Color.fromRGBO(13, 110, 253, 1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                      decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Color.fromRGBO(20, 134, 210, 1),
+                              Color.fromRGBO(4, 199, 144, 1),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomCenter,
+                          ),
+                          borderRadius: BorderRadius.all(Radius.circular(10))),
                       alignment: Alignment.center,
                       child: Text(
                         button,

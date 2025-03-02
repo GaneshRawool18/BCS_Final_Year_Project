@@ -1,3 +1,4 @@
+import 'package:advance_digital_notepad/view/chat_box.dart';
 import 'package:advance_digital_notepad/view/expense_manager.dart';
 import 'package:advance_digital_notepad/view/home_screen.dart';
 import 'package:advance_digital_notepad/view/messages_page.dart';
@@ -19,7 +20,7 @@ class _HomePageState extends State<HomePage> {
     const HomeScreen(),
     const ToDoList(),
     const ExpenseManager(),
-    const MessagesPage(),
+    const ChatBoxPage(),
     const ProfilePage(),
   ];
 
