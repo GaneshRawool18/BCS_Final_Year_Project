@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'package:advance_digital_notepad/view/home_page.dart';
-import 'package:advance_digital_notepad/view/on_board.dart';
 import 'package:advance_digital_notepad/view/on_board_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';

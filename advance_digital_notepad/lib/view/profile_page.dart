@@ -1,9 +1,11 @@
 import 'package:advance_digital_notepad/controller/firebase_services.dart';
+import 'package:advance_digital_notepad/controller/user_controller.dart';
 import 'package:advance_digital_notepad/view/about_us.dart';
 import 'package:advance_digital_notepad/view/edit_profile.dart';
 import 'package:advance_digital_notepad/view/sign_in.dart';
 import 'package:advance_digital_notepad/view/terms_and_condition.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -14,6 +16,7 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  final UserController userController = Get.find<UserController>();
   List<Map<String, dynamic>> options = [
     {
       "title": "Edit Profile",
@@ -78,10 +81,11 @@ class _ProfilePageState extends State<ProfilePage> {
                     logoutColor = Colors.grey;
                   });
                   await FirebaseServices.signOutUser();
-                  Navigator.pushReplacement(context,
-                      MaterialPageRoute(builder: (context) {
-                    return const SignInPage();
-                  }));
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SignInPage()),
+                    (route) => false, // Remove all previous routes
+                  );
                 },
                 child: Container(
                   padding:
@@ -164,24 +168,28 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             SizedBox(height: MediaQuery.of(context).size.height * 0.015),
 
-// Display User's Name
-            Text(
-              "Ganesh Rawool", // Replace with dynamic name if needed
-              style: GoogleFonts.poppins(
-                fontSize: MediaQuery.of(context).size.width * 0.05,
-                fontWeight: FontWeight.w600,
+            // User Name
+            Obx(
+              () => Text(
+                "${userController.userName}",
+                style: GoogleFonts.poppins(
+                  fontSize: MediaQuery.of(context).size.width * 0.05,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
 
             SizedBox(height: MediaQuery.of(context).size.height * 0.005),
 
             // Display User's Email
-            Text(
-              "Ganesh18@gmail.com",
-              style: GoogleFonts.poppins(
-                fontSize: MediaQuery.of(context).size.width * 0.04,
-                fontWeight: FontWeight.w400,
-                color: Colors.grey[600],
+            Obx(
+              () => Text(
+                "${userController.email}",
+                style: GoogleFonts.poppins(
+                  fontSize: MediaQuery.of(context).size.width * 0.04,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.grey[600],
+                ),
               ),
             ),
 

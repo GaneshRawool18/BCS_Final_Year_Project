@@ -1,9 +1,11 @@
+import 'package:advance_digital_notepad/controller/user_controller.dart';
 import 'package:advance_digital_notepad/view/Expense/about_us.dart';
 import 'package:advance_digital_notepad/view/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:advance_digital_notepad/view/categorie_page.dart';
 import 'package:advance_digital_notepad/view/graph_page.dart';
 import 'package:advance_digital_notepad/view/expense_manager.dart';
+import 'package:get/get.dart';
 
 class CustomDrawer extends StatefulWidget {
   const CustomDrawer({super.key});
@@ -13,6 +15,7 @@ class CustomDrawer extends StatefulWidget {
 }
 
 class _CustomDrawerState extends State<CustomDrawer> {
+  final UserController userController = Get.find<UserController>();
   int selectedIndex = 0;
   Color containerColor = Colors.green;
 
@@ -46,23 +49,27 @@ class _CustomDrawerState extends State<CustomDrawer> {
                   const SizedBox(height: 10),
 
                   // Profile Name
-                  const Text(
-                    "Ganesh Rawool",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                  Obx(
+                    () => Text(
+                      "${userController.userName}",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
 
                   // Profile Email
-                  const Text(
-                    "Ganesh18@gmail.com",
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
+                  Obx(
+                    () => Text(
+                      "${userController.email}",
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
                     ),
-                  ),
+                  )
                 ],
               ),
             ),

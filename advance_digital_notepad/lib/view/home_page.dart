@@ -1,7 +1,6 @@
 import 'package:advance_digital_notepad/view/chat_box.dart';
 import 'package:advance_digital_notepad/view/expense_manager.dart';
 import 'package:advance_digital_notepad/view/home_screen.dart';
-import 'package:advance_digital_notepad/view/messages_page.dart';
 import 'package:advance_digital_notepad/view/profile_page.dart';
 import 'package:advance_digital_notepad/view/to_do_list.dart';
 import 'package:flutter/material.dart';
@@ -17,8 +16,8 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int selectedIndex = 0;
   List<Widget> pages = [
-    const HomeScreen(),
-    const ToDoList(),
+    HomeScreen(),
+    ToDoList(),
     const ExpenseManager(),
     const ChatBoxPage(),
     const ProfilePage(),
