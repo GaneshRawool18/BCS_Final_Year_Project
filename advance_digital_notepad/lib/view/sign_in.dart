@@ -138,26 +138,61 @@ class _SignInPageState extends State<SignInPage> {
                     if (emailController.text.trim().isNotEmpty &&
                         passwordController.text.trim().isNotEmpty) {
                       try {
-                        await FirebaseServices.userFirebaseLogin(
-                            emailController.text, passwordController.text);
-                        clearControllerData();
-                        await Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(builder: (context) {
-                          return const HomePage();
-                        }));
-                      } on FirebaseAuthException catch (obj) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text("${obj.message}"),
-                          backgroundColor: Colors.amber,
-                          duration: const Duration(seconds: 5),
-                        ));
+                        User? user =
+                            await FirebaseServices.signInWithEmailAndPassword(
+                          emailController.text.trim(),
+                          passwordController.text.trim(),
+                        );
+
+                        if (user != null) {
+                          // ✅ Clear input fields after successful login
+                          clearControllerData();
+
+                          // ✅ Navigate to HomePage after login
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(
+                                builder: (context) => const HomePage()),
+                          );
+                        } else {
+                          // ❌ Show error if login fails
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                  "Invalid credentials. Please try again."),
+                              backgroundColor: Colors.red,
+                              duration: Duration(seconds: 5),
+                            ),
+                          );
+                        }
+                      } on FirebaseAuthException catch (e) {
+                        // ❌ Firebase Auth Error Handling
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content:
+                                Text(e.message ?? "Login failed. Try again."),
+                            backgroundColor: Colors.amber,
+                            duration: const Duration(seconds: 5),
+                          ),
+                        );
+                      } catch (e) {
+                        // ❌ Catch Any Other Unexpected Errors
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("An error occurred: $e"),
+                            backgroundColor: Colors.red,
+                            duration: const Duration(seconds: 5),
+                          ),
+                        );
                       }
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                        content: Text("All fields are required "),
-                        duration: Duration(seconds: 5),
-                        backgroundColor: Color.fromARGB(255, 251, 55, 20),
-                      ));
+                      // ❌ Fields cannot be empty
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("All fields are required"),
+                          duration: Duration(seconds: 5),
+                          backgroundColor: Color.fromARGB(255, 251, 55, 20),
+                        ),
+                      );
                     }
                   },
                   child: Container(
@@ -205,20 +240,20 @@ class _SignInPageState extends State<SignInPage> {
                 ),
                 GestureDetector(
                   onTap: () async {
-                    User? user = await FirebaseServices.loginWithGoogle();
+                    // User? user = await FirebaseServices.loginWithGoogle();
 
-                    if (user != null) {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const HomePage()),
-                      );
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                        content: Text("Google sign-in failed"),
-                        backgroundColor: Colors.red,
-                      ));
-                    }
+                    // if (user != null) {
+                    //   Navigator.pushReplacement(
+                    //     context,
+                    //     MaterialPageRoute(
+                    //         builder: (context) => const HomePage()),
+                    //   );
+                    // } else {
+                    //   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    //     content: Text("Google sign-in failed"),
+                    //     backgroundColor: Colors.red,
+                    //   ));
+                    // }
                   },
                   child: Container(
                     child: Row(

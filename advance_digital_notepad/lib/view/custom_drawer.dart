@@ -1,9 +1,14 @@
+import 'dart:io';
+
+import 'package:advance_digital_notepad/controller/image_picker_helper.dart';
+import 'package:advance_digital_notepad/controller/user_controller.dart';
 import 'package:advance_digital_notepad/view/Expense/about_us.dart';
 import 'package:advance_digital_notepad/view/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:advance_digital_notepad/view/categorie_page.dart';
 import 'package:advance_digital_notepad/view/graph_page.dart';
 import 'package:advance_digital_notepad/view/expense_manager.dart';
+import 'package:get/get.dart';
 
 class CustomDrawer extends StatefulWidget {
   const CustomDrawer({super.key});
@@ -13,8 +18,22 @@ class CustomDrawer extends StatefulWidget {
 }
 
 class _CustomDrawerState extends State<CustomDrawer> {
+  final UserController userController = Get.find<UserController>();
   int selectedIndex = 0;
   Color containerColor = Colors.green;
+
+  File? _selectedImage;
+  final ImagePickerHelper _imagePickerHelper = ImagePickerHelper();
+
+  Future<void> _pickImage() async {
+    File? imageFile =
+        await _imagePickerHelper.pickImageFromGallery(); // Pick from gallery
+    if (imageFile != null) {
+      setState(() {
+        _selectedImage = imageFile; // Update UI with the selected image
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,31 +57,66 @@ class _CustomDrawerState extends State<CustomDrawer> {
                 children: [
                   // Profile Picture
                   CircleAvatar(
-                    radius: 35,
+                    radius: 50,
                     backgroundColor: Colors.white,
-                    child:
-                        Icon(Icons.person, size: 40, color: Colors.grey[700]),
+                    child: ClipOval(
+                      child: Obx(() {
+                        return _selectedImage != null
+                            ? Image.file(
+                                _selectedImage!,
+                                width:
+                                    100, // Ensure it fits within the CircleAvatar
+                                height: 100,
+                                fit: BoxFit.cover,
+                              )
+                            : userController.profileImage.value.isNotEmpty
+                                ? Image.network(
+                                    userController.profileImage.value,
+                                    width: 100,
+                                    height: 100,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Image.asset(
+                                        "assets/images/profile_pic.png",
+                                        width: 100,
+                                        height: 100,
+                                        fit: BoxFit.cover,
+                                      ); // Fallback image
+                                    },
+                                  )
+                                : Image.asset(
+                                    "assets/images/profile_pic.png",
+                                    width: 100,
+                                    height: 100,
+                                    fit: BoxFit.cover,
+                                  ); // Default image
+                      }),
+                    ),
                   ),
                   const SizedBox(height: 10),
 
                   // Profile Name
-                  const Text(
-                    "Ganesh Rawool",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                  Obx(
+                    () => Text(
+                      "${userController.userName}",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
 
                   // Profile Email
-                  const Text(
-                    "Ganesh18@gmail.com",
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
+                  Obx(
+                    () => Text(
+                      "${userController.email}",
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
                     ),
-                  ),
+                  )
                 ],
               ),
             ),

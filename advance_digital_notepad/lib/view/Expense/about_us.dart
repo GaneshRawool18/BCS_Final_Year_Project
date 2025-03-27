@@ -25,6 +25,9 @@ class _AboutUsPageState extends State<AboutUsPage> {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
 
+    // Detect Dark Mode
+    bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -32,12 +35,15 @@ class _AboutUsPageState extends State<AboutUsPage> {
           style: GoogleFonts.poppins(
             fontSize: screenWidth * 0.045,
             fontWeight: FontWeight.w600,
-            color: const Color.fromARGB(255, 11, 11, 11),
+            color: isDarkMode ? Colors.white : Colors.black,
           ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: isDarkMode ? Colors.black : Colors.blueAccent,
+        iconTheme:
+            IconThemeData(color: isDarkMode ? Colors.white : Colors.black),
       ),
+      backgroundColor: isDarkMode ? Colors.black : Colors.white,
       body: SingleChildScrollView(
         padding: EdgeInsets.symmetric(
           horizontal: screenWidth * 0.05,
@@ -51,13 +57,12 @@ class _AboutUsPageState extends State<AboutUsPage> {
                 borderRadius: BorderRadius.circular(screenWidth * 0.05),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color.fromARGB(255, 178, 178, 178),
-                    offset: const Offset(0, 0),
-                    blurStyle: BlurStyle.outer,
+                    color: isDarkMode ? Colors.grey[800]! : Colors.grey[300]!,
+                    offset: const Offset(0, 2),
                     blurRadius: screenWidth * 0.02,
                   )
                 ],
-                color: Colors.white,
+                color: isDarkMode ? Colors.grey[900] : Colors.white,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -66,30 +71,38 @@ class _AboutUsPageState extends State<AboutUsPage> {
                     "📌 About Us",
                     style: GoogleFonts.poppins(
                         fontSize: screenWidth * 0.045,
-                        fontWeight: FontWeight.bold),
+                        fontWeight: FontWeight.bold,
+                        color: isDarkMode ? Colors.white : Colors.black),
                   ),
                   SizedBox(height: screenHeight * 0.01),
                   Text(
                     "Welcome to Expense Tracker, your smart solution for managing daily expenses with ease. "
                     "Our app helps you categorize your spending, visualize financial insights with interactive graphs, "
                     "and keep track of transactions effortlessly.\n",
-                    style: GoogleFonts.poppins(fontSize: screenWidth * 0.04),
+                    style: GoogleFonts.poppins(
+                      fontSize: screenWidth * 0.04,
+                      color: isDarkMode ? Colors.white70 : Colors.black87,
+                    ),
                   ),
                   Text(
                     "With features like customizable categories, detailed spending analysis, and a user-friendly interface, "
                     "Expense Tracker ensures you stay in control of your finances. Whether you're budgeting for food, fuel, "
                     "shopping, or entertainment, our app makes financial management simple and efficient.\n",
-                    style: GoogleFonts.poppins(fontSize: screenWidth * 0.04),
+                    style: GoogleFonts.poppins(
+                      fontSize: screenWidth * 0.04,
+                      color: isDarkMode ? Colors.white70 : Colors.black87,
+                    ),
                   ),
                   Text(
                     "Start tracking today and take charge of your expenses!",
                     style: GoogleFonts.poppins(
                         fontSize: screenWidth * 0.04,
-                        fontWeight: FontWeight.w500),
+                        fontWeight: FontWeight.w500,
+                        color: isDarkMode ? Colors.white : Colors.black),
                   ),
                   SizedBox(height: screenHeight * 0.02),
 
-                  // Social Media Section
+                  // **Social Media Section**
                   Column(
                     children: [
                       Center(
@@ -97,7 +110,8 @@ class _AboutUsPageState extends State<AboutUsPage> {
                           "Follow Us on Social Media",
                           style: GoogleFonts.poppins(
                               fontSize: screenWidth * 0.042,
-                              fontWeight: FontWeight.w500),
+                              fontWeight: FontWeight.w500,
+                              color: isDarkMode ? Colors.white : Colors.black),
                         ),
                       ),
                       SizedBox(height: screenHeight * 0.015),
@@ -105,21 +119,29 @@ class _AboutUsPageState extends State<AboutUsPage> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           IconButton(
-                            icon: Image.asset("assets/images/insta_icon.png"),
-                            iconSize: screenWidth * 0.12,
+                            icon: Image.asset(
+                              "assets/images/insta_icon.png",
+                              width: screenWidth * 0.12,
+                              height: screenWidth * 0.12,
+                            ),
                             onPressed: () => _launchURL(instagramUrl),
                           ),
                           SizedBox(width: screenWidth * 0.04),
                           IconButton(
-                            icon: Image.asset("assets/images/twiter_icon.png"),
-                            iconSize: screenWidth * 0.12,
+                            icon: Image.asset(
+                              "assets/images/twiter_icon.png",
+                              width: screenWidth * 0.12,
+                              height: screenWidth * 0.12,
+                            ),
                             onPressed: () => _launchURL(twitterUrl),
                           ),
                           SizedBox(width: screenWidth * 0.04),
                           IconButton(
-                            icon:
-                                Image.asset("assets/images/faceBook_icon.png"),
-                            iconSize: screenWidth * 0.12,
+                            icon: Image.asset(
+                              "assets/images/faceBook_icon.png",
+                              width: screenWidth * 0.12,
+                              height: screenWidth * 0.12,
+                            ),
                             onPressed: () => _launchURL(facebookUrl),
                           ),
                         ],

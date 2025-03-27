@@ -3,6 +3,9 @@ import 'package:advance_digital_notepad/view/custom_drawer.dart';
 import 'package:advance_digital_notepad/view/expense_manager.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 
 class GraphPage extends StatefulWidget {
   const GraphPage({super.key});
@@ -12,101 +15,217 @@ class GraphPage extends StatefulWidget {
 }
 
 class _GraphPageState extends State<GraphPage> {
-  final List<Map<String, dynamic>> categories = [
-    {
-      "icon": Icons.restaurant,
-      "color": Colors.red,
-      "name": "Food",
-      "amount": 650.00
-    },
-    {
-      "icon": Icons.local_gas_station,
-      "color": Colors.blue,
-      "name": "Fuel",
-      "amount": 600.00
-    },
-    {
-      "icon": Icons.local_hospital,
-      "color": Colors.green,
-      "name": "Medicine",
-      "amount": 500.00
-    },
-    {
-      "icon": Icons.movie,
-      "color": Colors.purple,
-      "name": "Entertainment",
-      "amount": 475.00
-    },
-    {
-      "icon": Icons.shopping_cart,
-      "color": Colors.pink,
-      "name": "Shopping",
-      "amount": 325.00
-    },
-  ];
-
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  bool onPressed = false;
+  Map<String, double> categoryExpenses = {};
+  Map<String, Color> categoryColors = {
+    "Food": Colors.red,
+    "Fuel": Colors.blue,
+    "Medicine": Colors.green,
+    "Entertainment": Colors.purple,
+    "Shopping": Colors.pink,
+  };
+
+  bool isLoading = true;
+  double totalExpense = 0.0;
+  int selectedMonths = 1; // Default to 1 Month
+
+  @override
+  void initState() {
+    super.initState();
+    fetchUserExpenses();
+  }
+
+  /// **🔥 Fetch Expenses Based on Selected Timeframe**
+  Future<void> fetchUserExpenses() async {
+    String? userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return;
+
+    DateTime now = DateTime.now();
+    DateTime startDate = selectedMonths == 0
+        ? DateTime(2000)
+        : now.subtract(Duration(days: selectedMonths * 30));
+
+    try {
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection("users")
+          .doc(userId)
+          .collection("expenses")
+          .where("date",
+              isGreaterThanOrEqualTo:
+                  DateFormat('yyyy-MM-dd').format(startDate))
+          .get();
+
+      Map<String, double> expenses = {};
+      double total = 0.0;
+
+      for (var doc in snapshot.docs) {
+        var data = doc.data() as Map<String, dynamic>;
+        String category = data['category'];
+        double amount = (data['amount'] as num).toDouble();
+
+        expenses[category] = (expenses[category] ?? 0) + amount;
+        total += amount;
+      }
+
+      setState(() {
+        categoryExpenses = expenses;
+        totalExpense = total;
+        isLoading = false;
+      });
+    } catch (e) {
+      print("Error fetching expenses: $e");
+      setState(() => isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    double total = categories.fold(0, (sum, item) => sum + item['amount']);
+    bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    double screenWidth = MediaQuery.of(context).size.width;
+    double screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
-        title: const Text("Graphs"),
+        title: const Text("Expense Graph"),
+        backgroundColor: isDarkMode ? Colors.black : Colors.green,
         leading: IconButton(
           icon: const Icon(Icons.menu),
-          onPressed: () {
-            _scaffoldKey.currentState?.openDrawer();
-          },
+          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ),
       ),
       drawer: const CustomDrawer(),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Pie Chart
-            SizedBox(
-              height: 200,
-              child: Stack(
+      backgroundColor: isDarkMode ? Colors.black : Colors.white,
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
+              padding: EdgeInsets.symmetric(
+                  horizontal: screenWidth * 0.05, vertical: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  PieChart(
-                    PieChartData(
-                      centerSpaceRadius: 50,
-                      sectionsSpace: 4,
-                      sections: categories
-                          .map(
-                            (category) => PieChartSectionData(
-                              color: category['color'],
-                              value: category['amount'],
-                              title: '${category["amount"]}₹',
-                              titleStyle: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                              radius: 50,
-                            ),
-                          )
-                          .toList(),
+                  // **Time Filter Selection**
+                  SizedBox(
+                    height: screenHeight * 0.06,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: [
+                        buildFilterButton("1M", 1),
+                        buildFilterButton("2M", 2),
+                        buildFilterButton("3M", 3),
+                        buildFilterButton("6M", 6),
+                        buildFilterButton("9M", 9),
+                        buildFilterButton("12M", 12),
+                        buildFilterButton("All", 0),
+                      ],
                     ),
                   ),
-                  Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                  const SizedBox(height: 10),
+
+                  // **Pie Chart**
+                  SizedBox(
+                    height: screenHeight * 0.3,
+                    child: Stack(
                       children: [
-                        const Text(
+                        PieChart(
+                          PieChartData(
+                            centerSpaceRadius: screenWidth * 0.15,
+                            sectionsSpace: 4,
+                            sections: categoryExpenses.entries.map((entry) {
+                              return PieChartSectionData(
+                                color: categoryColors[entry.key] ?? Colors.grey,
+                                value: entry.value,
+                                title: "${entry.value.toStringAsFixed(2)}₹",
+                                titleStyle: TextStyle(
+                                  fontSize: screenWidth * 0.035,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                                radius: screenWidth * 0.15,
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                        Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                "Total",
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    color: isDarkMode
+                                        ? Colors.white54
+                                        : Colors.black54),
+                              ),
+                              Text(
+                                "₹${totalExpense.toStringAsFixed(2)}",
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color:
+                                      isDarkMode ? Colors.white : Colors.black,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // **Category List**
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: categoryExpenses.length,
+                      separatorBuilder: (_, __) => const Divider(),
+                      itemBuilder: (context, index) {
+                        String category =
+                            categoryExpenses.keys.elementAt(index);
+                        double amount = categoryExpenses[category]!;
+                        return ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor:
+                                categoryColors[category] ?? Colors.grey,
+                            child: Icon(Icons.category, color: Colors.white),
+                          ),
+                          title: Text(category,
+                              style: TextStyle(
+                                  color: isDarkMode
+                                      ? Colors.white
+                                      : Colors.black)),
+                          trailing: Text(
+                            "₹${amount.toStringAsFixed(2)}",
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color:
+                                    isDarkMode ? Colors.white : Colors.black),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
+                  // **Total Amount at Bottom**
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
                           "Total",
-                          style: TextStyle(fontSize: 16, color: Colors.black54),
+                          style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: isDarkMode ? Colors.white : Colors.black),
                         ),
                         Text(
-                          "₹$total",
-                          style: const TextStyle(
-                              fontSize: 20, fontWeight: FontWeight.bold),
+                          "₹${totalExpense.toStringAsFixed(2)}",
+                          style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: isDarkMode ? Colors.white : Colors.black),
                         ),
                       ],
                     ),
@@ -114,127 +233,31 @@ class _GraphPageState extends State<GraphPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
-
-            // List of Categories
-            Expanded(
-              child: ListView.separated(
-                itemCount: categories.length,
-                separatorBuilder: (_, __) => const Divider(),
-                itemBuilder: (context, index) {
-                  final category = categories[index];
-                  return ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: category['color'],
-                      child: Icon(category['icon'], color: Colors.white),
-                    ),
-                    title: Text(category['name']),
-                    trailing: Text(
-                      "₹${category['amount']}",
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            // Total Amount at Bottom
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    "Total",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    "₹$total",
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
-  /// **Drawer Widget**
-  Widget buildDrawer() {
-    return Drawer(
-      child: Padding(
-        padding: const EdgeInsets.only(left: 20, top: 20),
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            const SizedBox(height: 30),
-            const Text(
-              'Expense Manager',
-              style: TextStyle(
-                color: Colors.black,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const Text(
-              'Saves all your Transactions',
-              style: TextStyle(
-                color: Colors.black54,
-                fontSize: 10,
-              ),
-            ),
-            const SizedBox(height: 20),
-            buildDrawerItem('Transaction', "assets/images/tra icon.png",
-                () => navigateToPage(const ExpenseManager())),
-            buildDrawerItem('Graphs', "assets/images/pie icon.png",
-                () => navigateToPage(const GraphPage())),
-            buildDrawerItem('Category', "assets/images/cate icon.png",
-                () => navigateToPage(const CategoriePage())),
-            buildDrawerItem('About us', "assets/images/ab_us.png",
-                () => Navigator.pop(context)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// **Drawer Item Widget**
-  Widget buildDrawerItem(String title, String asset, VoidCallback onTap) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 5),
-      decoration: BoxDecoration(
-        borderRadius: const BorderRadius.all(Radius.circular(20)),
-        color:
-            onPressed ? const Color.fromRGBO(14, 161, 125, 0.15) : Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade300,
-            blurRadius: 5,
-            spreadRadius: 1,
-          ),
-        ],
-      ),
-      child: ListTile(
-        leading: Image.asset(asset),
-        title: Text(title),
-        onTap: () {
+  /// **Timeframe Selection Buttons**
+  Widget buildFilterButton(String label, int months) {
+    bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 5),
+      child: ElevatedButton(
+        onPressed: () {
           setState(() {
-            onPressed = false;
+            selectedMonths = months;
+            isLoading = true;
           });
-          onTap();
+          fetchUserExpenses();
         },
+        style: ElevatedButton.styleFrom(
+          backgroundColor:
+              selectedMonths == months ? Colors.green : Colors.grey,
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+        ),
+        child: Text(label,
+            style: TextStyle(
+                fontSize: 16, color: isDarkMode ? Colors.black : Colors.white)),
       ),
     );
-  }
-
-  /// **Navigation Helper**
-  void navigateToPage(Widget page) {
-    setState(() {
-      onPressed = false;
-    });
-    Navigator.of(context).push(MaterialPageRoute(builder: (context) => page));
   }
 }
