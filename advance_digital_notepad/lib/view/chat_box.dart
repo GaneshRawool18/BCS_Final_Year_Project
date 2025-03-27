@@ -47,13 +47,14 @@ class _ChatBoxPageState extends State<ChatBoxPage> {
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
+    bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDarkMode ? Colors.black : Colors.white,
       body: Padding(
         padding: EdgeInsets.symmetric(
-          horizontal: screenWidth * 0.05,
-          vertical: screenHeight * 0.05,
+          horizontal: screenWidth * 0.02,
+          vertical: screenHeight * 0.03,
         ),
         child: Column(
           children: [
@@ -65,7 +66,9 @@ class _ChatBoxPageState extends State<ChatBoxPage> {
                   style: GoogleFonts.poppins(
                     fontSize: screenWidth * 0.05,
                     fontWeight: FontWeight.w500,
-                    color: const Color.fromRGBO(27, 40, 30, 1),
+                    color: isDarkMode
+                        ? Colors.white
+                        : const Color.fromRGBO(27, 40, 30, 1),
                   ),
                 ),
                 const Spacer(),
@@ -74,23 +77,29 @@ class _ChatBoxPageState extends State<ChatBoxPage> {
                   height: screenWidth * 0.12,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white,
+                    color: Colors.transparent,
                   ),
-                  child: const Icon(Icons.more_vert),
-                )
+                  child: Icon(
+                    Icons.more_vert,
+                    color: isDarkMode ? Colors.white70 : Colors.black,
+                  ),
+                ),
               ],
             ),
             SizedBox(height: screenHeight * 0.04),
+
+            // **Search Box**
             Container(
               padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.02),
               width: screenWidth * 0.9,
               height: screenHeight * 0.06,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
-                color: Colors.white,
+                color: isDarkMode ? Colors.grey[900] : Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.shade300,
+                    color:
+                        isDarkMode ? Colors.grey[800]! : Colors.grey.shade300,
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),
@@ -98,28 +107,34 @@ class _ChatBoxPageState extends State<ChatBoxPage> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.search,
-                      color: Color.fromRGBO(125, 132, 141, 1)),
+                  Icon(Icons.search,
+                      color: isDarkMode
+                          ? Colors.white70
+                          : const Color.fromRGBO(125, 132, 141, 1)),
                   SizedBox(width: screenWidth * 0.02),
                   Text(
                     "Search for chats & messages",
                     style: GoogleFonts.poppins(
                       fontSize: screenWidth * 0.04,
                       fontWeight: FontWeight.w400,
-                      color: const Color.fromRGBO(125, 132, 141, 1),
+                      color: isDarkMode
+                          ? Colors.white70
+                          : const Color.fromRGBO(125, 132, 141, 1),
                     ),
                   ),
                 ],
               ),
             ),
-            SizedBox(height: screenHeight * 0.005),
+
+            // **Messages List**
             Expanded(
               child: ListView.builder(
                 itemCount: users.length,
                 itemBuilder: (context, index) {
                   return Padding(
-                    padding:
-                        EdgeInsets.symmetric(vertical: screenHeight * 0.015),
+                    padding: EdgeInsets.symmetric(
+                        vertical: screenHeight * 0.015,
+                        horizontal: screenWidth * 0.02),
                     child: GestureDetector(
                       onTap: () {
                         Navigator.of(context)
@@ -128,13 +143,17 @@ class _ChatBoxPageState extends State<ChatBoxPage> {
                         }));
                       },
                       child: Container(
-                        padding: EdgeInsets.all(screenWidth * 0.01),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: screenWidth * 0.025,
+                            vertical: screenHeight * 0.01),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(20),
-                          color: Colors.white,
+                          color: isDarkMode ? Colors.grey[900] : Colors.white,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.grey.shade300,
+                              color: isDarkMode
+                                  ? Colors.grey[800]!
+                                  : Colors.grey.shade300,
                               blurRadius: 8,
                               offset: const Offset(0, 3),
                             ),
@@ -163,8 +182,10 @@ class _ChatBoxPageState extends State<ChatBoxPage> {
                                         style: GoogleFonts.poppins(
                                           fontSize: screenWidth * 0.045,
                                           fontWeight: FontWeight.w500,
-                                          color: const Color.fromRGBO(
-                                              27, 40, 30, 1),
+                                          color: isDarkMode
+                                              ? Colors.white
+                                              : const Color.fromRGBO(
+                                                  27, 40, 30, 1),
                                         ),
                                       ),
                                       const Spacer(),
@@ -179,8 +200,10 @@ class _ChatBoxPageState extends State<ChatBoxPage> {
                                         style: GoogleFonts.poppins(
                                           fontSize: screenWidth * 0.04,
                                           fontWeight: FontWeight.w400,
-                                          color: const Color.fromRGBO(
-                                              125, 132, 141, 1),
+                                          color: isDarkMode
+                                              ? Colors.white70
+                                              : const Color.fromRGBO(
+                                                  125, 132, 141, 1),
                                         ),
                                       ),
                                     ],
@@ -191,8 +214,10 @@ class _ChatBoxPageState extends State<ChatBoxPage> {
                                     style: GoogleFonts.poppins(
                                       fontSize: screenWidth * 0.04,
                                       fontWeight: FontWeight.w400,
-                                      color: const Color.fromRGBO(
-                                          125, 132, 141, 1),
+                                      color: isDarkMode
+                                          ? Colors.white70
+                                          : const Color.fromRGBO(
+                                              125, 132, 141, 1),
                                     ),
                                   ),
                                 ],

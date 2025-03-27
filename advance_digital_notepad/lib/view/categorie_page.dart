@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:advance_digital_notepad/view/custom_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 
 class CategoriePage extends StatefulWidget {
   const CategoriePage({super.key});
@@ -11,414 +13,256 @@ class CategoriePage extends StatefulWidget {
 
 class _CategoriePageState extends State<CategoriePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  bool onPressed = false;
-  void showDeleteDialog(BuildContext context) {
+  List<Map<String, dynamic>> categories = [
+    {"name": "Food", "icon": "assets/images/food.png"},
+    {"name": "Fuel", "icon": "assets/images/Fuel.png"},
+    {"name": "Medicine", "icon": "assets/images/Medicine.png"},
+    {"name": "Shopping", "icon": "assets/images/Shopping.png"},
+  ];
+  TextEditingController categoryController = TextEditingController();
+  File? _selectedImage;
+
+  /// **📸 Pick Image from Gallery**
+  Future<void> pickImage() async {
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImage = File(pickedFile.path);
+      });
+    }
+  }
+
+  /// **🗑 Show Delete Confirmation Dialog**
+  void showDeleteDialog(BuildContext context, int index) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16.0),
-        ),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
         title: const Center(
-          child: Text(
-            'Delete Category',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
+          child: Text('Delete Category',
+              style: TextStyle(fontWeight: FontWeight.bold)),
         ),
         content: const Text(
-          'Are you sure you want to delete the selected category?',
-          textAlign: TextAlign.center,
-        ),
+            'Are you sure you want to delete the selected category?',
+            textAlign: TextAlign.center),
         actionsAlignment: MainAxisAlignment.spaceAround,
         actions: [
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color.fromRGBO(14, 161, 125, 1),
+              backgroundColor: Colors.red,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
+                  borderRadius: BorderRadius.circular(20)),
             ),
             onPressed: () {
-              // Handle delete action
+              setState(() => categories.removeAt(index));
               Navigator.of(context).pop();
             },
-            child: const Text(
-              'Delete',
-              style: TextStyle(
-                color: Colors.white,
-              ),
-            ),
+            child: const Text('Delete', style: TextStyle(color: Colors.white)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color.fromRGBO(140, 128, 128, 0.2),
+              backgroundColor: Colors.grey,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
+                  borderRadius: BorderRadius.circular(20)),
             ),
-            onPressed: () {
-              // Handle cancel action
-              Navigator.of(context).pop();
-            },
-            child: const Text(
-              'Cancel',
-              style: TextStyle(color: Colors.black),
-            ),
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel', style: TextStyle(color: Colors.black)),
           ),
         ],
       ),
     );
   }
 
+  /// **➕ Show Add Category BottomSheet**
   void categoriesBottomSheet() {
+    categoryController.clear();
+    _selectedImage = null;
     showModalBottomSheet(
-        isScrollControlled: true,
-        context: context,
-        builder: (context) {
-          return Padding(
-            padding: EdgeInsets.only(
-                left: 15,
-                top: 15,
-                right: 15,
-                bottom: MediaQuery.of(context).viewInsets.bottom),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 74,
-                  height: 74,
-                  decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Color.fromARGB(255, 217, 211, 211)),
-                  child: Image.asset("assets/images/pic.png"),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: Text(
-                    "Add",
-                    style: GoogleFonts.poppins(
-                        fontSize: 16, fontWeight: FontWeight.w500),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      context: context,
+      builder: (context) {
+        bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          decoration: BoxDecoration(
+            color: isDarkMode ? Colors.grey[900] : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+              left: 15,
+              right: 15,
+              top: 15),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: GestureDetector(
+                  onTap: pickImage,
+                  child: CircleAvatar(
+                    radius: 40,
+                    backgroundColor: Colors.grey[300],
+                    backgroundImage: _selectedImage != null
+                        ? FileImage(_selectedImage!)
+                        : null,
+                    child: _selectedImage == null
+                        ? const Icon(Icons.camera_alt,
+                            size: 40, color: Colors.grey)
+                        : null,
                   ),
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: Text(
-                        "Image URL",
-                        style: GoogleFonts.poppins(
-                            fontSize: 16, fontWeight: FontWeight.w500),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 20),
-                      child: TextField(
-                        decoration: InputDecoration(
-                            hintText: "Enter URL",
-                            hintStyle: GoogleFonts.poppins(
-                                fontSize: 13, fontWeight: FontWeight.w400),
-                            border: const OutlineInputBorder(
-                                borderSide: BorderSide(width: 330))),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: Text(
-                        "Category",
-                        style: GoogleFonts.poppins(
-                            fontSize: 16, fontWeight: FontWeight.w500),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 20),
-                      child: TextField(
-                        decoration: InputDecoration(
-                            hintText: "Enter category name",
-                            hintStyle: GoogleFonts.poppins(
-                                fontSize: 13, fontWeight: FontWeight.w400),
-                            border: const OutlineInputBorder(
-                                borderSide: BorderSide(width: 330))),
-                      ),
-                    ),
-                    Container(
-                      margin: EdgeInsets.only(
-                        left: MediaQuery.of(context).size.width / 3,
-                      ),
-                      width: 125,
-                      height: 40,
-                      decoration: const BoxDecoration(
-                          borderRadius: BorderRadius.all(Radius.circular(20)),
-                          color: Color.fromRGBO(14, 161, 125, 1)),
-                      child: const Center(child: Text("Add")),
-                    ),
-                    const SizedBox(
-                      height: 20,
-                    ),
-                  ],
-                )
-              ],
-            ),
-          );
-        });
+              ),
+              const SizedBox(height: 10),
+              _buildTextField(
+                  "Category Name", "Enter category name", categoryController),
+              const SizedBox(height: 10),
+              Center(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    if (categoryController.text.isNotEmpty &&
+                        _selectedImage != null) {
+                      setState(() {
+                        categories.add({
+                          "name": categoryController.text,
+                          "icon": _selectedImage!.path
+                        });
+                      });
+                      Navigator.pop(context);
+                    }
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text("Add Category"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 30, vertical: 12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// **🔹 Build TextField**
+  Widget _buildTextField(
+      String label, String hint, TextEditingController controller) {
+    bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 15),
+      child: TextField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: label,
+          filled: true,
+          fillColor: isDarkMode ? Colors.grey[800] : Colors.white,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+          hintText: hint,
+          labelStyle:
+              TextStyle(color: isDarkMode ? Colors.white : Colors.black),
+        ),
+        style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       key: _scaffoldKey,
       drawer: const CustomDrawer(),
+      backgroundColor: isDarkMode ? Colors.black : Colors.white,
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.only(top: 30),
             child: Row(children: [
-              GestureDetector(
-                onTap: () {
-                  _scaffoldKey.currentState?.openDrawer();
-                },
-                child: const Padding(
-                  padding: EdgeInsets.only(left: 20),
-                  child: Icon(
-                    Icons.menu,
-                    size: 30,
-                  ),
-                ),
+              IconButton(
+                icon: const Icon(Icons.menu, size: 30),
+                onPressed: () => _scaffoldKey.currentState?.openDrawer(),
               ),
-              Padding(
-                padding: const EdgeInsets.only(
-                  left: 20,
-                ),
-                child: Text(
-                  "Categories",
+              const SizedBox(width: 20),
+              Text("Categories",
                   style: GoogleFonts.poppins(
-                      fontSize: 16, fontWeight: FontWeight.w500),
-                ),
-              )
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: isDarkMode ? Colors.white : Colors.black)),
             ]),
           ),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      showDeleteDialog(context);
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 20, left: 10),
-                      child: Container(
-                        width: 145,
-                        height: 150,
-                        decoration: const BoxDecoration(
-                          borderRadius: BorderRadius.all(Radius.circular(10)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Color.fromRGBO(159, 156, 156, 1),
-                              offset: Offset(1, 2),
-                              blurRadius: 8,
-                              blurStyle: BlurStyle.outer,
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.only(top: 20),
-                              child: Image.asset("assets/images/food.png"),
-                            ),
-                            const Spacer(),
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 20),
-                              child: Text(
-                                "Food",
-                                style: GoogleFonts.poppins(
-                                    fontSize: 16, fontWeight: FontWeight.w500),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      showDeleteDialog(context);
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 20, left: 10),
-                      child: Container(
-                        width: 145,
-                        height: 150,
-                        decoration: const BoxDecoration(
-                          borderRadius: BorderRadius.all(Radius.circular(10)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Color.fromRGBO(159, 156, 156, 1),
-                              offset: Offset(1, 2),
-                              blurRadius: 8,
-                              blurStyle: BlurStyle.outer,
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.only(top: 20),
-                              child: Image.asset("assets/images/Fuel.png"),
-                            ),
-                            const Spacer(),
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 20),
-                              child: Text(
-                                "Fuel",
-                                style: GoogleFonts.poppins(
-                                    fontSize: 16, fontWeight: FontWeight.w500),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+          Expanded(
+            child: GridView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              itemCount: categories.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 15,
+                mainAxisSpacing: 15,
+                childAspectRatio: 1,
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      showDeleteDialog(context);
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 20, left: 10),
-                      child: Container(
-                        width: 145,
-                        height: 150,
-                        decoration: const BoxDecoration(
-                          borderRadius: BorderRadius.all(Radius.circular(10)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Color.fromRGBO(159, 156, 156, 1),
-                              offset: Offset(1, 2),
-                              blurRadius: 8,
-                              blurStyle: BlurStyle.outer,
-                            ),
-                          ],
+              itemBuilder: (context, index) {
+                var category = categories[index];
+                return GestureDetector(
+                  onTap: () => showDeleteDialog(context, index),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isDarkMode ? Colors.grey[800] : Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: isDarkMode
+                              ? Colors.black54
+                              : Colors.grey.withOpacity(0.3),
+                          blurRadius: 5,
+                          spreadRadius: 1,
                         ),
-                        child: Column(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.only(top: 20),
-                              child: Image.asset("assets/images/Medicine.png"),
-                            ),
-                            const Spacer(),
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 20),
-                              child: Text(
-                                "Medicine",
-                                style: GoogleFonts.poppins(
-                                    fontSize: 16, fontWeight: FontWeight.w500),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        category["icon"].toString().startsWith("/")
+                            ? Image.file(File(category["icon"]),
+                                height: 60, width: 60, fit: BoxFit.cover)
+                            : Image.asset(category["icon"],
+                                height: 60, width: 60, fit: BoxFit.contain),
+                        const SizedBox(height: 10),
+                        Text(category["name"],
+                            style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color:
+                                    isDarkMode ? Colors.white : Colors.black)),
+                      ],
                     ),
                   ),
-                  GestureDetector(
-                    onTap: () {
-                      showDeleteDialog(context);
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 20, left: 10),
-                      child: Container(
-                        width: 145,
-                        height: 150,
-                        decoration: const BoxDecoration(
-                          borderRadius: BorderRadius.all(Radius.circular(10)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Color.fromRGBO(159, 156, 156, 1),
-                              offset: Offset(1, 2),
-                              blurRadius: 8,
-                              blurStyle: BlurStyle.outer,
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.only(top: 20),
-                              child: Image.asset("assets/images/Shopping.png"),
-                            ),
-                            const Spacer(),
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 20),
-                              child: Text(
-                                "Shopping",
-                                style: GoogleFonts.poppins(
-                                    fontSize: 16, fontWeight: FontWeight.w500),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                );
+              },
+            ),
           ),
-          const Spacer(),
-          GestureDetector(
-            onTap: () {
-              categoriesBottomSheet();
-            },
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 20),
-              child: Container(
-                width: 180,
-                height: 46,
-                decoration: const BoxDecoration(
-                    borderRadius: BorderRadius.all(Radius.circular(30)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Color.fromRGBO(159, 156, 156, 1),
-                        offset: Offset(1, 2),
-                        blurRadius: 8,
-                        blurStyle: BlurStyle.outer,
-                      )
-                    ]),
-                child: Row(
-                  children: [
-                    Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Container(
-                          width: MediaQuery.of(context).size.width * 0.09,
-                          height: MediaQuery.of(context).size.width * 0.09,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.green,
-                          ),
-                          child: const Center(
-                              child: Icon(
-                            Icons.add,
-                            color: Colors.white,
-                          )),
-                        )),
-                    Text(
-                      "Add Categories ",
-                      style: GoogleFonts.poppins(
-                          fontSize: 13, fontWeight: FontWeight.w400),
-                    )
-                  ],
-                ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 20),
+            child: ElevatedButton.icon(
+              onPressed: categoriesBottomSheet,
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text("Add Category"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
               ),
             ),
-          )
+          ),
         ],
       ),
     );

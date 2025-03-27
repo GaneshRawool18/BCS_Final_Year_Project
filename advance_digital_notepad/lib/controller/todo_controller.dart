@@ -6,103 +6,144 @@ import '../model/note_model_class.dart';
 
 class ToDoController extends GetxController {
   var taskList = <ShowModelClass>[].obs;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
   void onInit() {
     super.onInit();
-    loadTasksFromLocal();
     fetchTasks();
   }
 
-  /// **🛠 Fetch tasks from Firebase**
+  /// **🔹 Get Current Logged-in User ID**
+  String? getCurrentUserId() {
+    return _auth.currentUser?.uid;
+  }
+
+  /// **🛠 Fetch Tasks for the Logged-in User**
   Future<void> fetchTasks() async {
-    String userId = FirebaseAuth.instance.currentUser!.uid;
-    var snapshot = await FirebaseFirestore.instance
-        .collection("users")
-        .doc(userId)
-        .collection("tasks")
-        .get();
+    String? userId = getCurrentUserId();
+    if (userId == null) {
+      taskList.clear();
+      return;
+    }
 
-    taskList.value = snapshot.docs.map((doc) {
-      var data = doc.data();
-      return ShowModelClass(
-        id: doc.id, // Use Firebase document ID
-        title: data["title"],
-        description: data["description"],
-        date: data["date"],
-      );
-    }).toList();
+    try {
+      var snapshot = await _firestore
+          .collection("users")
+          .doc(userId)
+          .collection("tasks")
+          .orderBy("date", descending: true)
+          .get();
 
-    saveTasksToLocal(); // Sync with local storage
+      if (snapshot.docs.isEmpty) {
+        print("No tasks found in Firebase. Loading from local storage...");
+        loadTasksFromLocal(
+            userId); // ✅ Load previous session tasks only for this user
+      } else {
+        taskList.value = snapshot.docs.map((doc) {
+          var data = doc.data();
+          return ShowModelClass(
+            id: doc.id,
+            title: data["title"],
+            description: data["description"],
+            date: data["date"],
+          );
+        }).toList();
+
+        saveTasksToLocal(userId); // ✅ Sync local storage with Firebase
+      }
+    } catch (e) {
+      print("Error fetching tasks: $e");
+      loadTasksFromLocal(userId); // ✅ Load previous session tasks on error
+    }
   }
 
-  /// **📤 Add a new task to Firebase**
+  /// **📤 Add a New Task for Logged-in User**
   Future<void> addTask(ShowModelClass task) async {
-    String userId = FirebaseAuth.instance.currentUser!.uid;
-    var docRef = await FirebaseFirestore.instance
-        .collection("users")
-        .doc(userId)
-        .collection("tasks")
-        .add({
-      "title": task.title,
-      "description": task.description,
-      "date": task.date,
-    });
+    String? userId = getCurrentUserId();
+    if (userId == null) return;
 
-    taskList.add(task.copyWith(id: docRef.id)); // Update local list
-    saveTasksToLocal();
+    try {
+      var docRef = await _firestore
+          .collection("users")
+          .doc(userId)
+          .collection("tasks")
+          .add({
+        "title": task.title,
+        "description": task.description,
+        "date": task.date,
+      });
+
+      taskList.add(task.copyWith(id: docRef.id)); // Add task locally
+      saveTasksToLocal(userId);
+    } catch (e) {
+      print("Error adding task: $e");
+    }
   }
 
-  /// **✏ Edit an existing task**
+  /// **✏ Edit an Existing Task**
   Future<void> editTask(int index, ShowModelClass updatedTask) async {
-    String userId = FirebaseAuth.instance.currentUser!.uid;
+    String? userId = getCurrentUserId();
+    if (userId == null) return;
+
     String taskId = taskList[index].id; // Get task ID
 
-    await FirebaseFirestore.instance
-        .collection("users")
-        .doc(userId)
-        .collection("tasks")
-        .doc(taskId)
-        .update({
-      "title": updatedTask.title,
-      "description": updatedTask.description,
-      "date": updatedTask.date,
-    });
+    try {
+      await _firestore
+          .collection("users")
+          .doc(userId)
+          .collection("tasks")
+          .doc(taskId)
+          .update({
+        "title": updatedTask.title,
+        "description": updatedTask.description,
+        "date": updatedTask.date,
+      });
 
-    taskList[index] = updatedTask.copyWith(id: taskId); // Keep ID unchanged
-    update();
-    saveTasksToLocal();
+      taskList[index] = updatedTask.copyWith(id: taskId);
+      update();
+      saveTasksToLocal(userId);
+    } catch (e) {
+      print("Error editing task: $e");
+    }
   }
 
-  /// **🗑 Remove Task**
+  /// **🗑 Remove a Task**
   Future<void> removeTask(int index) async {
-    String userId = FirebaseAuth.instance.currentUser!.uid;
+    String? userId = getCurrentUserId();
+    if (userId == null) return;
+
     String taskId = taskList[index].id;
 
-    await FirebaseFirestore.instance
-        .collection("users")
-        .doc(userId)
-        .collection("tasks")
-        .doc(taskId)
-        .delete();
-
-    taskList.removeAt(index);
-    saveTasksToLocal();
+    try {
+      await _firestore
+          .collection("users")
+          .doc(userId)
+          .collection("tasks")
+          .doc(taskId)
+          .delete();
+      taskList.removeAt(index);
+      saveTasksToLocal(userId);
+    } catch (e) {
+      print("Error deleting task: $e");
+    }
   }
 
-  /// **💾 Save tasks locally**
-  Future<void> saveTasksToLocal() async {
+  /// **💾 Save Tasks Locally (Per User)**
+  Future<void> saveTasksToLocal(String userId) async {
     final prefs = await SharedPreferences.getInstance();
     List<String> tasks = taskList
-        .map((task) => "${task.id}|${task.title}|${task.description}|${task.date}")
+        .map((task) =>
+            "${task.id}|${task.title}|${task.description}|${task.date}")
         .toList();
-    await prefs.setStringList('tasks', tasks);
+    await prefs.setStringList('tasks_$userId', tasks);
   }
 
-  /// **🔄 Load tasks from local storage**
-  Future<void> loadTasksFromLocal() async {
+  /// **🔄 Load Tasks from Local Storage (Per User)**
+  Future<void> loadTasksFromLocal(String userId) async {
     final prefs = await SharedPreferences.getInstance();
-    List<String>? tasks = prefs.getStringList('tasks');
+    List<String>? tasks = prefs.getStringList('tasks_$userId');
     if (tasks != null) {
       taskList.value = tasks.map((task) {
         var data = task.split("|");

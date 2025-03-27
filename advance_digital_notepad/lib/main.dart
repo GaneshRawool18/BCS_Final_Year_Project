@@ -1,6 +1,7 @@
 import 'package:advance_digital_notepad/view/splash_screen.dart';
 import 'package:advance_digital_notepad/view/home_page.dart';
 import 'package:advance_digital_notepad/controller/user_controller.dart';
+import 'package:advance_digital_notepad/controller/theme_controller.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -18,8 +19,9 @@ Future<void> main() async {
   final prefs = await SharedPreferences.getInstance();
   bool isLoggedIn = prefs.getBool('is_logged_in') ?? false;
 
-  // ✅ Register UserController globally
+  // ✅ Ensure controllers are initialized before running the app
   Get.put(UserController());
+  Get.put(ThemeController()); // ✅ Initialize ThemeController here
 
   runApp(MainApp(isLoggedIn: isLoggedIn));
 }
@@ -30,9 +32,17 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp( // ✅ Use GetMaterialApp instead of MaterialApp
-      debugShowCheckedModeBanner: false,
-      home: isLoggedIn ? const HomePage() : const SplashScreen(),
-    );
+    final ThemeController themeController =
+        Get.find<ThemeController>(); // ✅ Now ThemeController is available
+
+    return Obx(() => GetMaterialApp(
+          debugShowCheckedModeBanner: false,
+          themeMode: themeController.isDarkMode.value
+              ? ThemeMode.dark
+              : ThemeMode.light,
+          theme: ThemeData.light(), // Light Theme
+          darkTheme: ThemeData.dark(), // Dark Theme
+          home: isLoggedIn ? const HomePage() : const SplashScreen(),
+        ));
   }
 }

@@ -11,8 +11,10 @@ class ToDoList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDarkMode ? Colors.black : Colors.white,
       appBar: AppBar(
         title: const Text(
           "To-Do List",
@@ -22,7 +24,9 @@ class ToDoList extends StatelessWidget {
             color: Colors.white,
           ),
         ),
-        backgroundColor: const Color.fromRGBO(2, 167, 177, 1),
+        backgroundColor: isDarkMode
+            ? Colors.grey[900]
+            : const Color.fromRGBO(2, 167, 177, 1),
       ),
       body: Obx(() => ListView.builder(
             itemCount: toDoController.taskList.length,
@@ -33,7 +37,7 @@ class ToDoList extends StatelessWidget {
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(20),
-                    color: Colors.blue[100],
+                    color: isDarkMode ? Colors.grey[850] : Colors.blue[100],
                   ),
                   child: Column(
                     children: [
@@ -57,29 +61,40 @@ class ToDoList extends StatelessWidget {
                           ),
                           Expanded(
                             child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 10),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     task.title,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
+                                      color: isDarkMode
+                                          ? Colors.white
+                                          : Colors.black,
                                     ),
                                   ),
                                   const SizedBox(height: 5),
                                   Text(
                                     task.description,
-                                    style: const TextStyle(
-                                        fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black54),
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      color: isDarkMode
+                                          ? Colors.white70
+                                          : Colors.black54,
+                                    ),
                                   ),
                                   const SizedBox(height: 5),
                                   Text(
                                     "Due: ${task.date}",
                                     style: const TextStyle(
-                                        fontSize: 14, fontWeight: FontWeight.w500, color: Colors.redAccent),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.redAccent,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -91,12 +106,24 @@ class ToDoList extends StatelessWidget {
                         children: [
                           const Spacer(),
                           IconButton(
-                            onPressed: () => _showBottomSheet(context, task, index, isEdit: true),
-                            icon: SvgPicture.asset("assets/svg/edit.svg"),
+                            onPressed: () => _showBottomSheet(
+                                context, task, index,
+                                isEdit: true),
+                            icon: SvgPicture.asset(
+                              "assets/svg/edit.svg",
+                              color: isDarkMode
+                                  ? Colors.white
+                                  : null, // Keeps icon visible
+                            ),
                           ),
                           IconButton(
                             onPressed: () => toDoController.removeTask(index),
-                            icon: SvgPicture.asset("assets/svg/delete.svg"),
+                            icon: SvgPicture.asset(
+                              "assets/svg/delete.svg",
+                              color: isDarkMode
+                                  ? Colors.white
+                                  : null, // Keeps icon visible
+                            ),
                           ),
                         ],
                       ),
@@ -109,76 +136,80 @@ class ToDoList extends StatelessWidget {
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showBottomSheet(context, null, null, isEdit: false),
         backgroundColor: Colors.blue,
-        child: const Icon(
-          Icons.add,
-          color: Colors.white,
-        ),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
 
-  void _showBottomSheet(BuildContext context, ShowModelClass? task, int? index, {required bool isEdit}) {
-  TextEditingController titleController = TextEditingController(text: isEdit ? task!.title : '');
-  TextEditingController descriptionController = TextEditingController(text: isEdit ? task!.description : '');
-  TextEditingController dateController = TextEditingController(text: isEdit ? task!.date : '');
+  void _showBottomSheet(BuildContext context, ShowModelClass? task, int? index,
+      {required bool isEdit}) {
+    TextEditingController titleController =
+        TextEditingController(text: isEdit ? task!.title : '');
+    TextEditingController descriptionController =
+        TextEditingController(text: isEdit ? task!.description : '');
+    TextEditingController dateController =
+        TextEditingController(text: isEdit ? task!.date : '');
 
-  showModalBottomSheet(
-    isScrollControlled: true,
-    context: context,
-    builder: (context) {
-      return Padding(
-        padding: EdgeInsets.only(
-          left: 15,
-          right: 15,
-          top: 15,
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(
-                    isEdit ? "Edit To-Do" : "Create To-Do",
-                    style: GoogleFonts.quicksand(fontSize: 22, fontWeight: FontWeight.w600),
+    bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    showModalBottomSheet(
+      isScrollControlled: true,
+      context: context,
+      backgroundColor: isDarkMode ? Colors.grey[900] : Colors.white,
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 15,
+            right: 15,
+            top: 15,
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Text(
+                  isEdit ? "Edit To-Do" : "Create To-Do",
+                  style: GoogleFonts.quicksand(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w600,
+                    color: isDarkMode ? Colors.white : Colors.black,
                   ),
                 ),
-              ],
-            ),
-            _buildTextField(titleController, "Enter Title"),
-            _buildTextField(descriptionController, "Enter Description"),
-            _buildDateField(context, dateController),
-            Padding(
-              padding: const EdgeInsets.only(top: 15, bottom: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ElevatedButton(
+              ),
+              _buildTextField(titleController, "Enter Title", isDarkMode),
+              _buildTextField(
+                  descriptionController, "Enter Description", isDarkMode),
+              _buildDateField(context, dateController, isDarkMode),
+              Padding(
+                padding: const EdgeInsets.only(top: 15, bottom: 10),
+                child: Center(
+                  child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 50, vertical: 15),
                     ),
                     onPressed: () {
                       if (titleController.text.isNotEmpty &&
                           descriptionController.text.isNotEmpty &&
                           dateController.text.isNotEmpty) {
                         if (isEdit) {
-                          toDoController.editTask(index!, ShowModelClass(
-                            id: task!.id, // Keep existing task ID
-                            title: titleController.text,
-                            description: descriptionController.text,
-                            date: dateController.text,
-                          ));
+                          toDoController.editTask(
+                              index!,
+                              ShowModelClass(
+                                id: task!.id,
+                                title: titleController.text,
+                                description: descriptionController.text,
+                                date: dateController.text,
+                              ));
                         } else {
                           toDoController.addTask(ShowModelClass(
-                            id: "", // Firebase generates an ID
+                            id: "",
                             title: titleController.text,
                             description: descriptionController.text,
                             date: dateController.text,
@@ -189,46 +220,51 @@ class ToDoList extends StatelessWidget {
                     },
                     child: Text(
                       "Submit",
-                      style: GoogleFonts.quicksand(fontSize: 15, fontWeight: FontWeight.w400, color: Colors.white),
+                      style: GoogleFonts.quicksand(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
-          ],
-        ),
-      );
-    },
-  );
-}
+            ],
+          ),
+        );
+      },
+    );
+  }
 
-  Widget _buildTextField(TextEditingController controller, String hintText) {
+  Widget _buildTextField(
+      TextEditingController controller, String hintText, bool isDarkMode) {
     return TextField(
       controller: controller,
       decoration: InputDecoration(
         hintText: hintText,
+        hintStyle:
+            TextStyle(color: isDarkMode ? Colors.white54 : Colors.black54),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        fillColor: isDarkMode ? Colors.grey[800] : Colors.white,
+        filled: true,
       ),
+      style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
     );
   }
 
-  Widget _buildDateField(BuildContext context, TextEditingController controller) {
+  Widget _buildDateField(
+      BuildContext context, TextEditingController controller, bool isDarkMode) {
     return TextField(
       controller: controller,
       decoration: InputDecoration(
         hintText: "MM/DD/YYYY",
+        hintStyle:
+            TextStyle(color: isDarkMode ? Colors.white54 : Colors.black54),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-        suffixIcon: IconButton(
-          icon: const Icon(Icons.calendar_today),
-          onPressed: () async {
-            DateTime? pickedDate = await showDatePicker(
-                context: context, firstDate: DateTime.now(), lastDate: DateTime(2030));
-            if (pickedDate != null) {
-              controller.text = DateFormat('yyyy-MM-dd').format(pickedDate);
-            }
-          },
-        ),
+        suffixIcon: Icon(Icons.calendar_today,
+            color: isDarkMode ? Colors.white70 : Colors.black54),
       ),
+      style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
     );
   }
 }

@@ -1,13 +1,37 @@
+import 'dart:io';
+
+import 'package:advance_digital_notepad/controller/image_picker_helper.dart';
 import 'package:advance_digital_notepad/controller/todo_controller.dart';
 import 'package:advance_digital_notepad/controller/user_controller.dart';
+import 'package:advance_digital_notepad/view/Expense/about_us.dart';
 import 'package:advance_digital_notepad/view/NotificationPage.dart';
+import 'package:advance_digital_notepad/view/categorie_page.dart';
+import 'package:advance_digital_notepad/view/expense_manager.dart';
+import 'package:advance_digital_notepad/view/graph_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
   final UserController userController = Get.find<UserController>();
   final ToDoController toDoController = Get.put(ToDoController());
+  File? _selectedImage;
+  final ImagePickerHelper _imagePickerHelper = ImagePickerHelper();
+
+  Future<void> _pickImage() async {
+    File? imageFile =
+        await _imagePickerHelper.pickImageFromGallery(); // Pick from gallery
+    if (imageFile != null) {
+      setState(() {
+        _selectedImage = imageFile; // Update UI with the selected image
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +43,8 @@ class HomeScreen extends StatelessWidget {
         ),
         actions: [
           Container(
-            margin: EdgeInsets.only(right: MediaQuery.of(context).size.width * 0.03),
+            margin: EdgeInsets.only(
+                right: MediaQuery.of(context).size.width * 0.03),
             padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.025),
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
@@ -28,9 +53,7 @@ class HomeScreen extends StatelessWidget {
             child: IconButton(
               icon: const Icon(Icons.notifications, size: 28),
               onPressed: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-                  return const NotificationPage();
-                }));
+                Get.to(() => const NotificationPage());
               },
             ),
           ),
@@ -40,7 +63,9 @@ class HomeScreen extends StatelessWidget {
         children: [
           // **Profile Section**
           Container(
-            margin: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width * 0.02, vertical: MediaQuery.of(context).size.width * 0.02),
+            margin: EdgeInsets.symmetric(
+                horizontal: MediaQuery.of(context).size.width * 0.02,
+                vertical: MediaQuery.of(context).size.width * 0.02),
             width: double.infinity,
             padding: const EdgeInsets.all(20),
             decoration: const BoxDecoration(
@@ -60,10 +85,45 @@ class HomeScreen extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const CircleAvatar(
-                  radius: 35,
-                  backgroundColor: Colors.white,
-                  child: Icon(Icons.person, size: 40, color: Colors.grey),
+                GestureDetector(
+                  onTap: _pickImage, // Add functionality to pick image
+                  child: CircleAvatar(
+                    radius: 50,
+                    backgroundColor: Colors.white,
+                    child: ClipOval(
+                      child: Obx(() {
+                        return _selectedImage != null
+                            ? Image.file(
+                                _selectedImage!,
+                                width:
+                                    100, // Ensure it fits within the CircleAvatar
+                                height: 100,
+                                fit: BoxFit.cover,
+                              )
+                            : userController.profileImage.value.isNotEmpty
+                                ? Image.network(
+                                    userController.profileImage.value,
+                                    width: 100,
+                                    height: 100,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Image.asset(
+                                        "assets/images/profile_pic.png",
+                                        width: 100,
+                                        height: 100,
+                                        fit: BoxFit.cover,
+                                      ); // Fallback image
+                                    },
+                                  )
+                                : Image.asset(
+                                    "assets/images/profile_pic.png",
+                                    width: 100,
+                                    height: 100,
+                                    fit: BoxFit.cover,
+                                  ); // Default image
+                      }),
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 15),
                 Column(
@@ -71,11 +131,15 @@ class HomeScreen extends StatelessWidget {
                   children: [
                     Obx(() => Text(
                           "Welcome, ${userController.userName.value}",
-                          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold),
                         )),
                     Obx(() => Text(
                           userController.email.value,
-                          style: const TextStyle(color: Colors.white70, fontSize: 14),
+                          style: const TextStyle(
+                              color: Colors.white70, fontSize: 14),
                         )),
                   ],
                 ),
@@ -85,14 +149,18 @@ class HomeScreen extends StatelessWidget {
 
           const SizedBox(height: 20),
 
-          // **Quick Action Buttons**
+          // **Quick Action Buttons with Navigation**
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildActionButton(Icons.attach_money, "Transactions"),
-              _buildActionButton(Icons.pie_chart, "Graphs"),
-              _buildActionButton(Icons.category, "Category"),
-              _buildActionButton(Icons.info, "About Us"),
+              _buildActionButton(Icons.attach_money, "Transactions",
+                  () => Get.to(() => const ExpenseManager())),
+              _buildActionButton(Icons.pie_chart, "Graphs",
+                  () => Get.to(() => const GraphPage())),
+              _buildActionButton(Icons.category, "Category",
+                  () => Get.to(() => const CategoriePage())),
+              _buildActionButton(Icons.info, "About Us",
+                  () => Get.to(() => const AboutUsPage())),
             ],
           ),
 
@@ -100,33 +168,39 @@ class HomeScreen extends StatelessWidget {
 
           // **Task Categories**
           Expanded(
-  child: Obx(() {
-    var today = DateFormat.yMMMd().format(DateTime.now());
-    var tomorrow = DateFormat.yMMMd().format(DateTime.now().add(Duration(days: 1)));
+            child: Obx(() {
+              var today = DateFormat.yMMMd().format(DateTime.now());
+              var tomorrow = DateFormat.yMMMd()
+                  .format(DateTime.now().add(Duration(days: 1)));
 
-    var todayTasks = toDoController.taskList.where((task) => task.date == today).toList();
-    var tomorrowTasks = toDoController.taskList.where((task) => task.date == tomorrow).toList();
+              var todayTasks = toDoController.taskList
+                  .where((task) => task.date == today)
+                  .toList();
+              var tomorrowTasks = toDoController.taskList
+                  .where((task) => task.date == tomorrow)
+                  .toList();
 
-    var futureTasks = toDoController.taskList.where((task) {
-      try {
-        return DateFormat.yMMMd().parse(task.date).isAfter(DateTime.now().add(Duration(days: 1)));
-      } catch (e) {
-        print("Date format error: ${task.date} - $e");
-        return false;
-      }
-    }).toList();
+              var futureTasks = toDoController.taskList.where((task) {
+                try {
+                  return DateFormat.yMMMd()
+                      .parse(task.date)
+                      .isAfter(DateTime.now().add(Duration(days: 1)));
+                } catch (e) {
+                  print("Date format error: ${task.date} - $e");
+                  return false;
+                }
+              }).toList();
 
-    return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 15),
-      children: [
-        _buildTaskSection("Today's Tasks", todayTasks),
-        _buildTaskSection("Tomorrow's Tasks", tomorrowTasks),
-        _buildTaskSection("Upcoming Tasks", futureTasks),
-      ],
-    );
-  }),
-),
-
+              return ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 15),
+                children: [
+                  _buildTaskSection("Today's Tasks", todayTasks),
+                  _buildTaskSection("Tomorrow's Tasks", tomorrowTasks),
+                  _buildTaskSection("Upcoming Tasks", futureTasks),
+                ],
+              );
+            }),
+          ),
         ],
       ),
     );
@@ -140,7 +214,9 @@ class HomeScreen extends StatelessWidget {
             children: [
               Padding(
                 padding: const EdgeInsets.only(top: 10, bottom: 5),
-                child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                child: Text(title,
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold)),
               ),
               ListView.builder(
                 shrinkWrap: true,
@@ -151,7 +227,9 @@ class HomeScreen extends StatelessWidget {
                     margin: const EdgeInsets.symmetric(vertical: 5),
                     child: ListTile(
                       leading: const Icon(Icons.task, color: Colors.blue),
-                      title: Text(tasks[index].title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      title: Text(tasks[index].title,
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold)),
                       subtitle: Text("Due: ${tasks[index].date}"),
                       trailing: IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
@@ -166,14 +244,17 @@ class HomeScreen extends StatelessWidget {
         : const SizedBox();
   }
 
-  // **Quick Action Buttons**
-  Widget _buildActionButton(IconData icon, String label) {
+  // **Quick Action Buttons with Navigation**
+  Widget _buildActionButton(IconData icon, String label, VoidCallback onTap) {
     return Column(
       children: [
-        CircleAvatar(
-          radius: 30,
-          backgroundColor: Colors.green[200],
-          child: Icon(icon, size: 28, color: Colors.green[900]),
+        GestureDetector(
+          onTap: onTap,
+          child: CircleAvatar(
+            radius: 30,
+            backgroundColor: Colors.green[200],
+            child: Icon(icon, size: 28, color: Colors.green[900]),
+          ),
         ),
         const SizedBox(height: 5),
         Text(

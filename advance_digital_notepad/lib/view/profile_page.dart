@@ -1,9 +1,14 @@
+import 'dart:io';
+
 import 'package:advance_digital_notepad/controller/firebase_services.dart';
+import 'package:advance_digital_notepad/controller/image_picker_helper.dart';
+import 'package:advance_digital_notepad/controller/theme_controller.dart';
 import 'package:advance_digital_notepad/controller/user_controller.dart';
 import 'package:advance_digital_notepad/view/about_us.dart';
 import 'package:advance_digital_notepad/view/edit_profile.dart';
 import 'package:advance_digital_notepad/view/sign_in.dart';
 import 'package:advance_digital_notepad/view/terms_and_condition.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -16,7 +21,9 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  final ThemeController themeController = Get.find<ThemeController>();
   final UserController userController = Get.find<UserController>();
+
   List<Map<String, dynamic>> options = [
     {
       "title": "Edit Profile",
@@ -29,80 +36,137 @@ class _ProfilePageState extends State<ProfilePage> {
       "icon": Icons.description_outlined,
       "route": const TermsAndConditionPage()
     },
-    {"title": "Logout", "icon": Icons.exit_to_app, "route": null},
+    {
+      "title": "Theme",
+      "icon": Icons.brightness_6_outlined,
+      "route": null
+    }, // Theme Option
+    {"title": "Logout", "icon": Icons.exit_to_app, "route": const SignInPage()},
   ];
 
-  void _onOptionTap(int index) {
-    if (options[index]["title"] == "Logout") {
-      _showLogoutDialog();
-    } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => options[index]["route"]),
-      );
+  File? _selectedImage;
+  final ImagePickerHelper _imagePickerHelper = ImagePickerHelper();
+
+  Future<void> _pickImage() async {
+    File? imageFile =
+        await _imagePickerHelper.pickImageFromGallery(); // Pick from gallery
+    if (imageFile != null) {
+      setState(() {
+        _selectedImage = imageFile; // Update UI with the selected image
+      });
     }
   }
 
+  void _onOptionTap(int index) {
+    if (options[index]["title"] == "Theme") {
+      _showThemeDialog();
+    } else if (options[index]["title"] == "Logout") {
+      _showLogoutDialog();
+    } else if (options[index]["route"] != null) {
+      Navigator.push(context,
+          MaterialPageRoute(builder: (context) => options[index]["route"]));
+    }
+  }
+
+  /// **🌙 Improved Dark & Light Theme Selection Dialog**
+  void _showThemeDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: themeController.isDarkMode.value
+            ? Colors.grey[900]
+            : Colors.white, // Theme-aware background
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+        title: Text(
+          "Select Theme",
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color:
+                themeController.isDarkMode.value ? Colors.white : Colors.black,
+          ),
+        ),
+        content: Obx(() => Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioListTile(
+                  title: const Text("Light Mode"),
+                  value: false,
+                  groupValue: themeController.isDarkMode.value,
+                  activeColor: Colors.blue,
+                  onChanged: (value) {
+                    themeController.toggleTheme(false);
+                    Navigator.pop(context); // Close dialog on selection
+                  },
+                ),
+                RadioListTile(
+                  title: const Text("Dark Mode"),
+                  value: true,
+                  groupValue: themeController.isDarkMode.value,
+                  activeColor: Colors.blue,
+                  onChanged: (value) {
+                    themeController.toggleTheme(true);
+                    Navigator.pop(context); // Close dialog on selection
+                  },
+                ),
+              ],
+            )),
+      ),
+    );
+  }
+
+  /// **🚪 Improved Logout Alert Box**
   void _showLogoutDialog() {
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) {
-          Color cancelColor = Colors.red;
-          Color logoutColor = Colors.green;
-
-          return AlertDialog(
-            title: const Text("Logout"),
-            content: const Text("Are you sure you want to logout?"),
-            actions: [
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    cancelColor = Colors.grey; // Change color on press
-                  });
-                  Navigator.pop(context);
-                },
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-                  decoration: BoxDecoration(
-                    color: cancelColor,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Text(
-                    "Cancel",
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                ),
-              ),
-              GestureDetector(
-                onTap: () async {
-                  setState(() {
-                    logoutColor = Colors.grey;
-                  });
-                  await FirebaseServices.signOutUser();
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (context) => const SignInPage()),
-                    (route) => false, // Remove all previous routes
-                  );
-                },
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-                  decoration: BoxDecoration(
-                    color: logoutColor,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Text(
-                    "Logout",
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
+      builder: (context) => AlertDialog(
+        backgroundColor: themeController.isDarkMode.value
+            ? Colors.grey[900]
+            : Colors.white, // Dark mode styling
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+        title: Text(
+          "Logout",
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color:
+                themeController.isDarkMode.value ? Colors.white : Colors.black,
+          ),
+        ),
+        content: Text(
+          "Are you sure you want to logout?",
+          style: TextStyle(
+            color: themeController.isDarkMode.value
+                ? Colors.white70
+                : Colors.black87,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Cancel",
+                style: TextStyle(
+                  color: themeController.isDarkMode.value
+                      ? Colors.grey
+                      : Colors.blue,
+                )),
+          ),
+          TextButton(
+            onPressed: () {
+              FirebaseServices.signOutUser();
+              Navigator.of(context)
+                  .pushReplacement(MaterialPageRoute(builder: (context) {
+                return const SignInPage();
+              })); // Close dialog
+              // ✅ Add your logout logic here
+            },
+            child: const Text("Logout", style: TextStyle(color: Colors.red)),
+          ),
+        ],
       ),
     );
   }
@@ -110,117 +174,159 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              blurRadius: 5,
-              blurStyle: BlurStyle.outer,
-              color: Color.fromRGBO(255, 230, 223, 1),
-            ),
-          ],
-          color: Color.fromRGBO(255, 255, 255, 1),
-        ),
-        child: Column(
-          children: [
-            SizedBox(height: MediaQuery.of(context).size.height * 0.080),
-            Center(
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Container(
-                    width: MediaQuery.of(context).size.width * 0.5,
-                    height: MediaQuery.of(context).size.width * 0.5,
-                    decoration: const BoxDecoration(shape: BoxShape.circle),
-                    clipBehavior: Clip.antiAlias,
-                    child: Image.asset(
-                      "assets/images/profile_pic.png",
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  Positioned(
-                    bottom: MediaQuery.of(context).size.width * 0.025,
-                    right: MediaQuery.of(context).size.width * 0.04,
-                    child: GestureDetector(
-                      onTap: () {},
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: const Color.fromARGB(255, 243, 242, 228),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.5),
-                              blurRadius: 5,
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          Icons.edit,
-                          color: const Color.fromARGB(255, 4, 4, 4),
-                          size: MediaQuery.of(context).size.width * 0.06,
-                        ),
+      backgroundColor:
+          themeController.isDarkMode.value ? Colors.black : Colors.white,
+      body: Column(
+        children: [
+          SizedBox(height: MediaQuery.of(context).size.height * 0.08),
+          Center(
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // ✅ Profile Image (Dynamically Loaded)
+                Container(
+                  width: MediaQuery.of(context).size.width * 0.4,
+                  height: MediaQuery.of(context).size.width * 0.4,
+                  decoration: const BoxDecoration(shape: BoxShape.circle),
+                  clipBehavior: Clip.antiAlias,
+                  child: Obx(() {
+                    return _selectedImage != null
+                        ? Image.file(
+                            _selectedImage!, // ✅ Show selected image before upload
+                            fit: BoxFit.cover,
+                          )
+                        : userController.profileImage.value.isNotEmpty
+                            ? Image.network(
+                                userController.profileImage
+                                    .value, // ✅ Show uploaded image from Firestore
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Image.asset(
+                                      "assets/images/profile_pic.png",
+                                      fit: BoxFit.cover); // Fallback image
+                                },
+                              )
+                            : Image.asset("assets/images/profile_pic.png",
+                                fit: BoxFit.cover); // Default image
+                  }),
+                ),
+
+                // ✅ Edit Button (Upload New Image)
+                Positioned(
+                  bottom: MediaQuery.of(context).size.width * 0.025,
+                  right: MediaQuery.of(context).size.width * 0.04,
+                  child: GestureDetector(
+                    onTap: () async {
+                      User? user =
+                          FirebaseAuth.instance.currentUser; // Get current user
+
+                      if (user == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("Error: User not logged in")),
+                        );
+                        return;
+                      }
+
+                      File? imageFile =
+                          await _imagePickerHelper.pickImageFromGallery();
+                      if (imageFile != null) {
+                        // ✅ Immediately update the UI with selected image before uploading
+                        setState(() {
+                          _selectedImage = imageFile;
+                          userController.profileImage.value =
+                              imageFile.path; // Show selected image instantly
+                        });
+
+                        // ✅ Upload to Firebase
+                        await FirebaseServices.uploadProfileImage(
+                            user.uid, imageFile);
+
+                        // ✅ Fetch updated profile image from Firestore
+                        await userController.fetchUserData();
+                        setState(() {}); // Refresh UI after fetching new data
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("Profile picture updated!")),
+                        );
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: themeController.isDarkMode.value
+                            ? Colors.grey[800]
+                            : const Color.fromARGB(255, 243, 242, 228),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.5),
+                            blurRadius: 5,
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.edit,
+                        color: themeController.isDarkMode.value
+                            ? Colors.white
+                            : Colors.black,
+                        size: MediaQuery.of(context).size.width * 0.06,
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
-            SizedBox(height: MediaQuery.of(context).size.height * 0.015),
-
-            // User Name
-            Obx(
-              () => Text(
-                "${userController.userName}",
-                style: GoogleFonts.poppins(
-                  fontSize: MediaQuery.of(context).size.width * 0.05,
-                  fontWeight: FontWeight.w600,
                 ),
-              ),
+              ],
             ),
-
-            SizedBox(height: MediaQuery.of(context).size.height * 0.005),
-
-            // Display User's Email
-            Obx(
-              () => Text(
-                "${userController.email}",
-                style: GoogleFonts.poppins(
-                  fontSize: MediaQuery.of(context).size.width * 0.04,
-                  fontWeight: FontWeight.w400,
-                  color: Colors.grey[600],
-                ),
-              ),
-            ),
-
-            SizedBox(height: MediaQuery.of(context).size.height * 0.0015),
-            ListView.builder(
+          ),
+          Column(
+            children: [
+              Obx(() => Text(
+                    userController.userName.value,
+                    style: TextStyle(
+                      color: Get.isDarkMode
+                          ? Colors.white // Light text in dark mode
+                          : const Color.fromARGB(
+                              255, 23, 23, 23), // Dark text in light mode
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  )),
+              Obx(() => Text(
+                    userController.email.value,
+                    style: TextStyle(
+                      color: Get.isDarkMode
+                          ? Colors.white70 // Slightly dimmed white in dark mode
+                          : const Color.fromARGB(
+                              179, 5, 5, 5), // Dark text in light mode
+                      fontSize: 14,
+                    ),
+                  )),
+            ],
+          ),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+          Expanded(
+            child: ListView.builder(
               shrinkWrap: true,
               itemCount: options.length,
               itemBuilder: (BuildContext context, int index) {
                 return GestureDetector(
                   onTap: () => _onOptionTap(index),
                   child: Container(
-                    padding: EdgeInsets.only(
-                      left: MediaQuery.of(context).size.width * 0.042,
-                      right: MediaQuery.of(context).size.width * 0.042,
-                      top: MediaQuery.of(context).size.width * 0.03,
-                      bottom: MediaQuery.of(context).size.width * 0.03,
-                    ),
-                    margin: EdgeInsets.symmetric(
-                      horizontal: MediaQuery.of(context).size.width * 0.06,
-                      vertical: MediaQuery.of(context).size.width * 0.03,
-                    ),
-                    decoration: const BoxDecoration(
-                      borderRadius: BorderRadius.all(Radius.circular(15)),
+                    margin: const EdgeInsets.symmetric(
+                        vertical: 10, horizontal: 20),
+                    padding: const EdgeInsets.all(15),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      color: themeController.isDarkMode.value
+                          ? Colors.grey[850]
+                          : Colors.grey[200],
                       boxShadow: [
                         BoxShadow(
-                          blurRadius: 5,
-                          blurStyle: BlurStyle.outer,
-                          color: Color.fromRGBO(200, 200, 200, 1),
+                          blurRadius: 3,
+                          color: themeController.isDarkMode.value
+                              ? Colors.black26
+                              : Colors.black12,
                         ),
                       ],
-                      color: Color.fromRGBO(255, 255, 255, 1),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -229,33 +335,36 @@ class _ProfilePageState extends State<ProfilePage> {
                           children: [
                             Icon(
                               options[index]["icon"],
-                              size: MediaQuery.of(context).size.width * 0.048,
+                              size: 30,
+                              color: themeController.isDarkMode.value
+                                  ? Colors.white70
+                                  : Colors.black87,
                             ),
-                            SizedBox(
-                                width:
-                                    MediaQuery.of(context).size.width * 0.042),
+                            const SizedBox(width: 15),
                             Text(
                               options[index]["title"],
                               style: GoogleFonts.poppins(
-                                fontSize:
-                                    MediaQuery.of(context).size.width * 0.042,
-                                fontWeight: FontWeight.w500,
+                                fontSize: 18,
+                                color: themeController.isDarkMode.value
+                                    ? Colors.white
+                                    : Colors.black,
                               ),
                             ),
                           ],
                         ),
-                        Icon(
-                          Icons.arrow_forward_ios,
-                          size: MediaQuery.of(context).size.width * 0.045,
-                        ),
+                        Icon(Icons.arrow_forward_ios,
+                            size: 20,
+                            color: themeController.isDarkMode.value
+                                ? Colors.white70
+                                : Colors.black87),
                       ],
                     ),
                   ),
                 );
               },
-            )
-          ],
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }
