@@ -1,6 +1,4 @@
-import 'package:advance_digital_notepad/view/categorie_page.dart';
 import 'package:advance_digital_notepad/view/custom_drawer.dart';
-import 'package:advance_digital_notepad/view/expense_manager.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -17,6 +15,7 @@ class GraphPage extends StatefulWidget {
 class _GraphPageState extends State<GraphPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   Map<String, double> categoryExpenses = {};
+  Map<String, dynamic> categorizedExpenses = {};
   Map<String, Color> categoryColors = {
     "Food": Colors.red,
     "Fuel": Colors.blue,
@@ -27,7 +26,10 @@ class _GraphPageState extends State<GraphPage> {
 
   bool isLoading = true;
   double totalExpense = 0.0;
-  int selectedMonths = 1; // Default to 1 Month
+  int selectedMonths = 1;
+  DateTime? startDate;
+  DateTime? endDate;
+  DateTime? selectedDay;
 
   @override
   void initState() {
@@ -35,15 +37,24 @@ class _GraphPageState extends State<GraphPage> {
     fetchUserExpenses();
   }
 
-  /// **🔥 Fetch Expenses Based on Selected Timeframe**
   Future<void> fetchUserExpenses() async {
     String? userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) return;
 
     DateTime now = DateTime.now();
-    DateTime startDate = selectedMonths == 0
+    DateTime calculatedStartDate = selectedMonths == 0
         ? DateTime(2000)
         : now.subtract(Duration(days: selectedMonths * 30));
+
+    if (startDate != null && endDate != null) {
+      calculatedStartDate = startDate!;
+      now = endDate!;
+    }
+
+    if (selectedDay != null) {
+      calculatedStartDate = selectedDay!;
+      now = selectedDay!;
+    }
 
     try {
       QuerySnapshot snapshot = await FirebaseFirestore.instance
@@ -52,11 +63,14 @@ class _GraphPageState extends State<GraphPage> {
           .collection("expenses")
           .where("date",
               isGreaterThanOrEqualTo:
-                  DateFormat('yyyy-MM-dd').format(startDate))
+                  DateFormat('yyyy-MM-dd').format(calculatedStartDate))
+          .where("date",
+              isLessThanOrEqualTo: DateFormat('yyyy-MM-dd').format(now))
           .get();
 
       Map<String, double> expenses = {};
       double total = 0.0;
+      Map<String, dynamic> categoryMap = {};
 
       for (var doc in snapshot.docs) {
         var data = doc.data() as Map<String, dynamic>;
@@ -65,16 +79,64 @@ class _GraphPageState extends State<GraphPage> {
 
         expenses[category] = (expenses[category] ?? 0) + amount;
         total += amount;
+
+        if (categoryMap.containsKey(category)) {
+          categoryMap[category]['amount'] += amount;
+        } else {
+          categoryMap[category] = {
+            'amount': amount,
+            'color': categoryColors[category] ?? Colors.grey,
+          };
+        }
       }
 
       setState(() {
         categoryExpenses = expenses;
+        categorizedExpenses = categoryMap;
         totalExpense = total;
         isLoading = false;
       });
     } catch (e) {
       print("Error fetching expenses: $e");
       setState(() => isLoading = false);
+    }
+  }
+
+  Future<void> pickDateRange() async {
+    DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+    );
+
+    if (picked != null) {
+      setState(() {
+        startDate = picked.start;
+        endDate = picked.end;
+        selectedMonths = -1;
+        selectedDay = null;
+        isLoading = true;
+      });
+      fetchUserExpenses();
+    }
+  }
+
+  Future<void> pickSingleDay() async {
+    DateTime? picked = await showDatePicker(
+      context: context,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+    );
+
+    if (picked != null) {
+      setState(() {
+        selectedDay = picked;
+        startDate = null;
+        endDate = null;
+        selectedMonths = -1;
+        isLoading = true;
+      });
+      fetchUserExpenses();
     }
   }
 
@@ -104,12 +166,12 @@ class _GraphPageState extends State<GraphPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // **Time Filter Selection**
                   SizedBox(
                     height: screenHeight * 0.06,
                     child: ListView(
                       scrollDirection: Axis.horizontal,
                       children: [
+                        buildFilterButton("Pick a Day", -2),
                         buildFilterButton("1M", 1),
                         buildFilterButton("2M", 2),
                         buildFilterButton("3M", 3),
@@ -117,15 +179,14 @@ class _GraphPageState extends State<GraphPage> {
                         buildFilterButton("9M", 9),
                         buildFilterButton("12M", 12),
                         buildFilterButton("All", 0),
+                        buildFilterButton("Custom", -1),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 10),
-
-                  // **Pie Chart**
                   SizedBox(
                     height: screenHeight * 0.3,
                     child: Stack(
+                      alignment: Alignment.center,
                       children: [
                         PieChart(
                           PieChartData(
@@ -146,88 +207,65 @@ class _GraphPageState extends State<GraphPage> {
                             }).toList(),
                           ),
                         ),
-                        Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                "Total",
-                                style: TextStyle(
-                                    fontSize: 16,
-                                    color: isDarkMode
-                                        ? Colors.white54
-                                        : Colors.black54),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Total",
+                              style: TextStyle(
+                                  fontSize: 16,
+                                  color: isDarkMode
+                                      ? Colors.white54
+                                      : Colors.black54),
+                            ),
+                            Text(
+                              "₹${totalExpense.toStringAsFixed(2)}",
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: isDarkMode ? Colors.white : Colors.black,
                               ),
-                              Text(
-                                "₹${totalExpense.toStringAsFixed(2)}",
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color:
-                                      isDarkMode ? Colors.white : Colors.black,
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 20),
-
-                  // **Category List**
                   Expanded(
-                    child: ListView.separated(
-                      itemCount: categoryExpenses.length,
-                      separatorBuilder: (_, __) => const Divider(),
+                    child: ListView.builder(
+                      itemCount: categorizedExpenses.length,
                       itemBuilder: (context, index) {
                         String category =
-                            categoryExpenses.keys.elementAt(index);
-                        double amount = categoryExpenses[category]!;
-                        return ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor:
-                                categoryColors[category] ?? Colors.grey,
-                            child: Icon(Icons.category, color: Colors.white),
-                          ),
-                          title: Text(category,
-                              style: TextStyle(
-                                  color: isDarkMode
-                                      ? Colors.white
-                                      : Colors.black)),
-                          trailing: Text(
-                            "₹${amount.toStringAsFixed(2)}",
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color:
-                                    isDarkMode ? Colors.white : Colors.black),
+                            categorizedExpenses.keys.elementAt(index);
+                        var data = categorizedExpenses[category];
+
+                        return Card(
+                          margin: const EdgeInsets.symmetric(vertical: 6),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: data['color'],
+                              child: Icon(Icons.category, color: Colors.white),
+                            ),
+                            title: Text(category),
+                            trailing: Text(
+                              "₹${data['amount'].toStringAsFixed(2)}",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                           ),
                         );
                       },
                     ),
                   ),
-
-                  // **Total Amount at Bottom**
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          "Total",
-                          style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: isDarkMode ? Colors.white : Colors.black),
-                        ),
-                        Text(
-                          "₹${totalExpense.toStringAsFixed(2)}",
-                          style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: isDarkMode ? Colors.white : Colors.black),
-                        ),
-                      ],
+                  Card(
+                    margin: const EdgeInsets.all(10),
+                    child: ListTile(
+                      title: const Text("Total Expenses",
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      trailing: Text(
+                        "₹${totalExpense.toStringAsFixed(2)}",
+                        style: const TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ],
@@ -236,27 +274,41 @@ class _GraphPageState extends State<GraphPage> {
     );
   }
 
-  /// **Timeframe Selection Buttons**
   Widget buildFilterButton(String label, int months) {
-    bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    bool isSelected = false;
+
+    if (months == -1) {
+      isSelected = (startDate != null && endDate != null); // Custom Date Range
+    } else if (months == -2) {
+      isSelected = (selectedDay != null); // Single Day
+    } else {
+      isSelected = (selectedMonths == months);
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 5),
       child: ElevatedButton(
         onPressed: () {
           setState(() {
-            selectedMonths = months;
-            isLoading = true;
+            if (months == -1) {
+              pickDateRange();
+            } else if (months == -2) {
+              pickSingleDay();
+            } else {
+              selectedMonths = months;
+              startDate = null;
+              endDate = null;
+              selectedDay = null;
+              isLoading = true;
+              fetchUserExpenses();
+            }
           });
-          fetchUserExpenses();
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor:
-              selectedMonths == months ? Colors.green : Colors.grey,
+          backgroundColor: isSelected ? Colors.green : Colors.grey,
           padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
         ),
-        child: Text(label,
-            style: TextStyle(
-                fontSize: 16, color: isDarkMode ? Colors.black : Colors.white)),
+        child: Text(label, style: const TextStyle(color: Colors.white)),
       ),
     );
   }
