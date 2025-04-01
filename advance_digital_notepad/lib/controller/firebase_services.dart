@@ -10,15 +10,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../controller/user_controller.dart';
 
 class FirebaseServices {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  // final FirebaseAuth _auth = FirebaseAuth.instance;
+  // final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  /// **🔹 Get Current User ID**
+  // Get Current User ID
   static String? getCurrentUserId() {
     return FirebaseAuth.instance.currentUser?.uid;
   }
 
-  /// **🆕 Create User Account**
+  // Create User Account
   static Future<User?> createUserAccount(
       String name, String email, String phone, String password) async {
     try {
@@ -36,7 +36,7 @@ class FirebaseServices {
           "email": email,
           "mobile": phone,
           "profileImage":
-              "assets/images/profile_pic.png", // Default profile image
+              "assets/images/profile_pic.png", 
           "timestamp": FieldValue.serverTimestamp(),
         });
 
@@ -51,7 +51,7 @@ class FirebaseServices {
     }
   }
 
-  /// **🔐 Sign In with Email & Password**
+  // Sign In with Email & Password
   static Future<User?> signInWithEmailAndPassword(
       String email, String password) async {
     try {
@@ -75,7 +75,7 @@ class FirebaseServices {
     }
   }
 
-  /// **🌐 Google Sign-In**
+  // Google Sign-In
   static Future<User?> loginWithGoogle() async {
     try {
       GoogleSignIn googleSignIn = GoogleSignIn();
@@ -110,7 +110,7 @@ class FirebaseServices {
     }
   }
 
-  /// **🚪 User Logout**
+  // User Logout 
   static Future<void> signOutUser() async {
     try {
       await FirebaseAuth.instance.signOut();
@@ -123,7 +123,7 @@ class FirebaseServices {
     }
   }
 
-  /// **📤 Upload Profile Image**
+  // Upload Profile Image 
   static Future<String?> uploadProfileImage(
       String userId, File imageFile) async {
     try {
@@ -145,7 +145,7 @@ class FirebaseServices {
     }
   }
 
-  /// **🔥 Add Expense for User**
+  // Add Expense for User 
   static Future<void> addExpense(
       String category, DateTime date, String amount, String description) async {
     String? userId = getCurrentUserId();
@@ -165,7 +165,7 @@ class FirebaseServices {
     });
   }
 
-  /// **✏️ Update Expense**
+  // Update Expense
   static Future<void> updateExpense(String expenseId, String category,
       DateTime date, String amount, String description) async {
     String? userId = getCurrentUserId();
@@ -185,7 +185,7 @@ class FirebaseServices {
     });
   }
 
-  /// **🗑 Delete Expense**
+  // Delete Expense
   static Future<void> deleteExpense(String expenseId) async {
     String? userId = getCurrentUserId();
     if (userId == null) return;
@@ -198,7 +198,7 @@ class FirebaseServices {
         .delete();
   }
 
-  /// **📌 Get Stream for User Expenses**
+  // Get Stream for User Expenses
   static Stream<QuerySnapshot> getExpensesStream() {
     String? userId = getCurrentUserId();
     if (userId == null) return const Stream.empty();
@@ -211,7 +211,7 @@ class FirebaseServices {
         .snapshots();
   }
 
-  /// **🔍 Save User Data on First Google Login**
+  // Save User Data on First Google Login
   static Future<void> _saveUserDataToFirestore(User user) async {
     DocumentSnapshot userDoc = await FirebaseFirestore.instance
         .collection("users")
@@ -229,20 +229,20 @@ class FirebaseServices {
     }
   }
 
-  /// **🔄 Save User Session**
+  // Save User Session
   static Future<void> _setUserSession(bool isLoggedIn, String email) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('is_logged_in', isLoggedIn);
     await prefs.setString('user_email', email);
   }
 
-  /// **🛠 Check if User is Logged In**
+  // Check if User is Logged In
   static Future<bool> isUserLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool('is_logged_in') ?? false;
   }
 
-  /// **📩 Get Logged-In User's Email**
+  // Get Logged-In User's Email
   static Future<String?> getLoggedInUser() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('user_email');
