@@ -4,10 +4,10 @@ import 'package:advance_digital_notepad/controller/firebase_services.dart';
 import 'package:advance_digital_notepad/controller/image_picker_helper.dart';
 import 'package:advance_digital_notepad/controller/theme_controller.dart';
 import 'package:advance_digital_notepad/controller/user_controller.dart';
-import 'package:advance_digital_notepad/view/about_us.dart';
-import 'package:advance_digital_notepad/view/edit_profile.dart';
-import 'package:advance_digital_notepad/view/sign_in.dart';
-import 'package:advance_digital_notepad/view/terms_and_condition.dart';
+import 'package:advance_digital_notepad/view/home/sign_in.dart';
+import 'package:advance_digital_notepad/view/home/terms_and_condition.dart';
+import 'package:advance_digital_notepad/view/profile/about_us.dart';
+import 'package:advance_digital_notepad/view/profile/edit_profile.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -222,7 +222,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
                       if (user == null) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text("Error: User not logged in")),
+                          const SnackBar(content: Text("Error: User not logged in")),
                         );
                         return;
                       }
@@ -246,7 +246,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         setState(() {}); // Refresh UI after fetching new data
 
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text("Profile picture updated!")),
+                          const SnackBar(content: Text("Profile picture updated!")),
                         );
                       }
                     },

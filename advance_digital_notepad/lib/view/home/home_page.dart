@@ -1,10 +1,11 @@
+import 'package:advance_digital_notepad/view/home/expense_manager.dart';
+import 'package:advance_digital_notepad/view/home/home_screen.dart';
+import 'package:advance_digital_notepad/view/home/to_do_list.dart';
+import 'package:advance_digital_notepad/view/profile/profile_page.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:advance_digital_notepad/view/chat_box.dart';
-import 'package:advance_digital_notepad/view/expense_manager.dart';
-import 'package:advance_digital_notepad/view/home_screen.dart';
-import 'package:advance_digital_notepad/view/profile_page.dart';
-import 'package:advance_digital_notepad/view/to_do_list.dart';
+import 'package:advance_digital_notepad/view/chat/chat_box.dart';
+
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -30,7 +31,7 @@ class _HomePageState extends State<HomePage> {
       body: pages[selectedIndex],
       bottomNavigationBar: CurvedNavigationBar(
         backgroundColor: Colors.transparent,
-        color: Color.fromARGB(255, 54, 161, 188),
+        color:const Color.fromARGB(255, 54, 161, 188),
         buttonBackgroundColor: const Color.fromRGBO(13, 110, 253, 1),
         height: 60,
         index: selectedIndex,

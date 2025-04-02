@@ -1,6 +1,6 @@
 import 'package:advance_digital_notepad/controller/firebase_services.dart';
-import 'package:advance_digital_notepad/view/home_page.dart';
-import 'package:advance_digital_notepad/view/sign_up.dart';
+import 'package:advance_digital_notepad/view/home/home_page.dart';
+import 'package:advance_digital_notepad/view/home/sign_up.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';

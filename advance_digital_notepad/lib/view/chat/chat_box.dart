@@ -1,4 +1,4 @@
-import 'package:advance_digital_notepad/view/messages_page.dart';
+import 'package:advance_digital_notepad/view/chat/messages_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 

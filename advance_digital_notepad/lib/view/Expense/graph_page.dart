@@ -1,4 +1,4 @@
-import 'package:advance_digital_notepad/view/custom_drawer.dart';
+import 'package:advance_digital_notepad/view/expense/custom_drawer.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -244,12 +244,12 @@ class _GraphPageState extends State<GraphPage> {
                           child: ListTile(
                             leading: CircleAvatar(
                               backgroundColor: data['color'],
-                              child: Icon(Icons.category, color: Colors.white),
+                              child: const Icon(Icons.category, color: Colors.white),
                             ),
                             title: Text(category),
                             trailing: Text(
                               "₹${data['amount'].toStringAsFixed(2)}",
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                              style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
                           ),
                         );

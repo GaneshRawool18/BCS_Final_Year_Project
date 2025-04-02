@@ -1,6 +1,6 @@
+import 'package:advance_digital_notepad/view/expense/custom_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:advance_digital_notepad/view/custom_drawer.dart';
 import 'package:advance_digital_notepad/controller/expense_controller.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -22,6 +22,7 @@ class _ExpenseManagerState extends State<ExpenseManager> {
   DateTime selectedDate = DateTime.now();
   String selectedCategory = "Food";
   String? editingExpenseId;
+  String selectedFilter = "All"; // Default filter value
 
   List<String> categories = [
     "Food",
@@ -35,13 +36,72 @@ class _ExpenseManagerState extends State<ExpenseManager> {
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
+    void _pickDate() async {
+      DateTime? pickedDate = await showDatePicker(
+        context: context,
+        initialDate: selectedDate,
+        firstDate: DateTime(2000),
+        lastDate: DateTime.now(),
+      );
+
+      if (pickedDate != null) {
+        setState(() {
+          selectedDate = pickedDate;
+        });
+      }
+    }
+
+    // Function to show the filter options in a dynamic menu
+    void _showFilterOptions(BuildContext context) {
+      showMenu(
+        context: context,
+        position: const RelativeRect.fromLTRB(100.0, 50.0, 10.0,
+            0.0), // Position the menu (you can adjust as needed)
+        items: [
+          const PopupMenuItem<String>(
+            value: "1 Month",
+            child: Text("1 Month"),
+          ),
+          const PopupMenuItem<String>(
+            value: "All",
+            child: Text("All"),
+          ),
+          const PopupMenuItem<String>(
+            value: "Particular Date",
+            child: Text("Particular Date"),
+          ),
+        ],
+        elevation: 8.0,
+      ).then((value) {
+        if (value != null) {
+          setState(() {
+            selectedFilter = value;
+            if (selectedFilter == "Particular Date") {
+              _pickDate(); // Open the date picker when "Particular Date" is selected
+            }
+          });
+        }
+      });
+    }
+
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
-        title: const Text("Expense Manager",
-            style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Expense Manager",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: isDarkMode ? Colors.black : Colors.green,
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.filter_list,
+                color: isDarkMode ? Colors.white : Colors.black),
+            onPressed: () async {
+              _showFilterOptions(context); // Function to show options
+            },
+          ),
+        ],
       ),
       drawer: const CustomDrawer(),
       backgroundColor: isDarkMode ? Colors.black : Colors.white,
@@ -56,80 +116,80 @@ class _ExpenseManagerState extends State<ExpenseManager> {
 
   Widget _buildTransactionList(bool isDarkMode) {
     return StreamBuilder(
-      stream: _expenseController.getExpensesStream(),
+      stream:
+          _expenseController.getExpensesStream(selectedFilter, selectedDate),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
+
         var expenses = snapshot.data!.docs;
+
+        // 🔹 Apply Filtering Logic
+        expenses = expenses.where((expense) {
+          DateTime expenseDate =
+              DateFormat('yyyy-MM-dd').parse(expense['date']);
+
+          if (selectedFilter == "Particular Date") {
+            return expenseDate == selectedDate;
+          } else if (selectedFilter == "1 Month") {
+            return expenseDate
+                .isAfter(DateTime.now().subtract(const Duration(days: 30)));
+          }
+          return true; // "All" case
+        }).toList();
+
         return ListView.builder(
           padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
           itemCount: expenses.length,
           itemBuilder: (context, index) {
             var expense = expenses[index];
 
-            return Container(
+            return Card(
+              // 🔹 UI remains the same
               margin: const EdgeInsets.symmetric(vertical: 8),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                    color: isDarkMode ? Colors.white24 : Colors.black26),
-                boxShadow: [
-                  BoxShadow(
-                    color: isDarkMode
-                        ? Colors.white10
-                        : Colors.grey.withOpacity(0.3),
-                    blurRadius: 4,
-                    spreadRadius: 1,
-                  )
-                ],
-              ),
-              child: Card(
-                color: isDarkMode ? Colors.grey[900] : Colors.white,
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text("Category: ${expense['category']}",
-                          style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: isDarkMode ? Colors.white : Colors.black)),
-                      Text("Date: ${expense['date']} | Day: ${expense['day']}",
-                          style: TextStyle(
-                              fontSize: 14,
-                              color: isDarkMode
-                                  ? Colors.white70
-                                  : Colors.black87)),
-                      Text("Description: ${expense['description']}",
-                          style: TextStyle(
-                              fontSize: 14,
-                              color: isDarkMode
-                                  ? Colors.white70
-                                  : Colors.black87)),
-                      Text("Amount: ₹${expense['amount']}",
-                          style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green)),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          IconButton(
+              color: isDarkMode ? Colors.grey[900] : Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("Category: ${expense['category']}",
+                        style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: isDarkMode ? Colors.white : Colors.black)),
+                    Text("Date: ${expense['date']} | Day: ${expense['day']}",
+                        style: TextStyle(
+                            fontSize: 14,
+                            color:
+                                isDarkMode ? Colors.white70 : Colors.black87)),
+                    Text("Description: ${expense['description']}",
+                        style: TextStyle(
+                            fontSize: 14,
+                            color:
+                                isDarkMode ? Colors.white70 : Colors.black87)),
+                    Text("Amount: ₹${expense['amount']}",
+                        style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green)),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        IconButton(
                             icon: const Icon(Icons.edit, color: Colors.blue),
                             onPressed: () =>
-                                _showTransactionBottomSheet(expense: expense),
-                          ),
-                          IconButton(
+                                _showTransactionBottomSheet(expense: expense)),
+                        IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () => _showDeleteDialog(expense.id),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                            onPressed: () => _showDeleteDialog(expense.id)),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             );

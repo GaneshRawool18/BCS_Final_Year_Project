@@ -1,5 +1,5 @@
-import 'package:advance_digital_notepad/view/on_board.dart';
-import 'package:advance_digital_notepad/view/sign_in.dart';
+import 'package:advance_digital_notepad/view/home/on_board.dart';
+import 'package:advance_digital_notepad/view/home/sign_in.dart';
 import 'package:flutter/material.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 

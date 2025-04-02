@@ -1,5 +1,5 @@
-import 'package:advance_digital_notepad/view/splash_screen.dart';
-import 'package:advance_digital_notepad/view/home_page.dart';
+import 'package:advance_digital_notepad/view/home/home_page.dart';
+import 'package:advance_digital_notepad/view/home/splash_screen.dart';
 import 'package:advance_digital_notepad/controller/user_controller.dart';
 import 'package:advance_digital_notepad/controller/theme_controller.dart';
 import 'package:firebase_core/firebase_core.dart';

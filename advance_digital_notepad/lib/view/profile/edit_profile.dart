@@ -1,6 +1,7 @@
+import 'package:advance_digital_notepad/controller/user_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../controller/user_controller.dart';
+
 
 class EditProfile extends StatefulWidget {
   const EditProfile({super.key});
@@ -94,12 +95,12 @@ class _EditProfileState extends State<EditProfile> {
                   Get.snackbar("Success", "Profile Updated Successfully");
                   Get.back();
                 },
-                icon: Icon(Icons.save),
-                label: Text("Save Changes", style: TextStyle(fontSize: 16)),
+                icon: const Icon(Icons.save),
+                label:const  Text("Save Changes", style: TextStyle(fontSize: 16)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor:
                       isDarkMode ? Colors.green[700] : Colors.green,
-                  padding: EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10)),
                 ),
@@ -129,11 +130,11 @@ class _EditProfileState extends State<EditProfile> {
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
             borderSide:
-                BorderSide(color: Colors.grey), // ✅ Ensures visible border
+                const BorderSide(color: Colors.grey), // ✅ Ensures visible border
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(
+            borderSide: const BorderSide(
                 color: Colors.green, width: 2), // ✅ Highlight on focus
           ),
         ),
