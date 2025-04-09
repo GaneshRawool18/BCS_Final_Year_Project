@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
+String updatedDate = DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.now());
 
 class ToDoList extends StatelessWidget {
   final ToDoController toDoController = Get.put(ToDoController());
@@ -32,12 +34,32 @@ class ToDoList extends StatelessWidget {
             itemCount: toDoController.taskList.length,
             itemBuilder: (context, index) {
               var task = toDoController.taskList[index];
+
+              // Parse due date
+              DateTime? dueDate;
+              try {
+                dueDate = DateFormat('MM/dd/yyyy').parse(task.date);
+              } catch (e) {
+                dueDate = null;
+              }
+              bool isOverdue =
+                  dueDate != null && dueDate.isBefore(DateTime.now());
+
+              // Card color
+              Color? cardColor;
+              if (isOverdue) {
+                cardColor = (isDarkMode ? Colors.grey[850] : Colors.blue[100])
+                    ?.withOpacity(0.4);
+              } else {
+                cardColor = isDarkMode ? Colors.grey[850] : Colors.blue[100];
+              }
+
               return Padding(
                 padding: const EdgeInsets.all(10),
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(20),
-                    color: isDarkMode ? Colors.grey[850] : Colors.blue[100],
+                    color: cardColor,
                   ),
                   child: Column(
                     children: [
@@ -93,7 +115,7 @@ class ToDoList extends StatelessWidget {
                                     style: const TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w500,
-                                      color: Colors.redAccent,
+                                      color: Color.fromARGB(255, 246, 25, 25),
                                     ),
                                   ),
                                 ],
@@ -111,18 +133,40 @@ class ToDoList extends StatelessWidget {
                                 isEdit: true),
                             icon: SvgPicture.asset(
                               "assets/svg/edit.svg",
-                              color: isDarkMode
-                                  ? Colors.white
-                                  : null, // Keeps icon visible
+                              color: isDarkMode ? Colors.white : null,
                             ),
                           ),
                           IconButton(
-                            onPressed: () => toDoController.removeTask(index),
+                            onPressed: () async {
+                              bool? confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    title: const Text("Confirm Deletion"),
+                                    content: const Text(
+                                        "Are you sure you want to delete this task?"),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(false),
+                                        child: const Text("No"),
+                                      ),
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(true),
+                                        child: const Text("Yes"),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                              if (confirm == true) {
+                                toDoController.removeTask(index);
+                              }
+                            },
                             icon: SvgPicture.asset(
                               "assets/svg/delete.svg",
-                              color: isDarkMode
-                                  ? Colors.white
-                                  : null, // Keeps icon visible
+                              color: isDarkMode ? Colors.white : null,
                             ),
                           ),
                         ],
@@ -198,15 +242,16 @@ class ToDoList extends StatelessWidget {
                       if (titleController.text.isNotEmpty &&
                           descriptionController.text.isNotEmpty &&
                           dateController.text.isNotEmpty) {
-                        if (isEdit) {
+                        if (isEdit && index != null) {
+                          final task = toDoController.taskList[index];
                           toDoController.editTask(
-                              index!,
-                              ShowModelClass(
-                                id: task!.id,
-                                title: titleController.text,
-                                description: descriptionController.text,
-                                date: dateController.text,
-                              ));
+                            task.id,
+                            titleController.text,
+                            descriptionController.text,
+                            newDate: dateController.text != task.date
+                                ? dateController.text
+                                : null,
+                          );
                         } else {
                           toDoController.addTask(ShowModelClass(
                             id: "",
@@ -254,17 +299,56 @@ class ToDoList extends StatelessWidget {
 
   Widget _buildDateField(
       BuildContext context, TextEditingController controller, bool isDarkMode) {
-    return TextField(
-      controller: controller,
-      decoration: InputDecoration(
-        hintText: "MM/DD/YYYY",
-        hintStyle:
-            TextStyle(color: isDarkMode ? Colors.white54 : Colors.black54),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-        suffixIcon: Icon(Icons.calendar_today,
-            color: isDarkMode ? Colors.white70 : Colors.black54),
+    return GestureDetector(
+      onTap: () async {
+        DateTime? pickedDate = await showDatePicker(
+          context: context,
+          initialDate: DateTime.now(),
+          firstDate: DateTime(2000),
+          lastDate: DateTime(2100),
+          builder: (context, child) {
+            return Theme(
+              data: Theme.of(context).copyWith(
+                colorScheme: isDarkMode
+                    ? ColorScheme.dark(
+                        primary: Colors.tealAccent,
+                        onPrimary: Colors.black,
+                        surface: Colors.grey[900]!,
+                        onSurface: Colors.white,
+                      )
+                    : ColorScheme.light(
+                        primary: Colors.blue,
+                        onPrimary: Colors.white,
+                        onSurface: Colors.black,
+                      ),
+                dialogBackgroundColor:
+                    isDarkMode ? Colors.grey[900] : Colors.white,
+              ),
+              child: child!,
+            );
+          },
+        );
+
+        if (pickedDate != null) {
+          controller.text = DateFormat('MM/dd/yyyy').format(pickedDate);
+        }
+      },
+      child: AbsorbPointer(
+        child: TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            hintText: "MM/DD/YYYY",
+            hintStyle:
+                TextStyle(color: isDarkMode ? Colors.white54 : Colors.black54),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            suffixIcon: Icon(Icons.calendar_today,
+                color: isDarkMode ? Colors.white70 : Colors.black54),
+          ),
+          style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
+        ),
       ),
-      style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
     );
   }
 }
+
+//main
