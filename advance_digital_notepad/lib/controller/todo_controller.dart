@@ -1,17 +1,37 @@
+import 'dart:developer';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
 import '../model/note_model_class.dart';
 
 class ToDoController extends GetxController {
   var taskList = <ShowModelClass>[].obs;
+
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  Database? _database;
 
   @override
   void onInit() {
     super.onInit();
+    initializeDatabase();
+  }
+
+  /// **🛠 Initialize Local Database**
+  Future<void> initializeDatabase() async {
+    _database = await openDatabase(
+      join(await getDatabasesPath(), 'tasks_database.db'),
+      onCreate: (db, version) {
+        return db.execute(
+          "CREATE TABLE tasks(id TEXT PRIMARY KEY, userId TEXT, title TEXT, description TEXT, date TEXT)",
+        );
+      },
+      version: 1,
+    );
+
     fetchTasks();
   }
 
@@ -23,10 +43,9 @@ class ToDoController extends GetxController {
   /// **🛠 Fetch Tasks for the Logged-in User**
   Future<void> fetchTasks() async {
     String? userId = getCurrentUserId();
-    if (userId == null) {
-      taskList.clear();
-      return;
-    }
+    if (userId == null) return;
+
+    taskList.clear(); // ✅ Ensure only the current user's tasks are displayed
 
     try {
       var snapshot = await _firestore
@@ -37,29 +56,28 @@ class ToDoController extends GetxController {
           .get();
 
       if (snapshot.docs.isEmpty) {
-        print("No tasks found in Firebase. Loading from local storage...");
-        loadTasksFromLocal(
-            userId); // ✅ Load previous session tasks only for this user
+        await loadTasksFromLocal(
+            userId); // Load from local if no tasks in Firestore
       } else {
         taskList.value = snapshot.docs.map((doc) {
           var data = doc.data();
           return ShowModelClass(
             id: doc.id,
-            title: data["title"],
-            description: data["description"],
-            date: data["date"],
+            title: data["title"] ?? "",
+            description: data["description"] ?? "",
+            date: data["date"] ?? "",
           );
         }).toList();
 
-        saveTasksToLocal(userId); // ✅ Sync local storage with Firebase
+        await saveTasksToLocal(userId); // Save fetched tasks to local DB
       }
     } catch (e) {
       print("Error fetching tasks: $e");
-      loadTasksFromLocal(userId); // ✅ Load previous session tasks on error
+      await loadTasksFromLocal(userId);
     }
   }
 
-  /// **📤 Add a New Task for Logged-in User**
+  /// **📤 Add a New Task**
   Future<void> addTask(ShowModelClass task) async {
     String? userId = getCurrentUserId();
     if (userId == null) return;
@@ -75,37 +93,10 @@ class ToDoController extends GetxController {
         "date": task.date,
       });
 
-      taskList.add(task.copyWith(id: docRef.id)); // Add task locally
-      saveTasksToLocal(userId);
+      taskList.add(task.copyWith(id: docRef.id));
+      await saveTasksToLocal(userId);
     } catch (e) {
       print("Error adding task: $e");
-    }
-  }
-
-  /// **✏ Edit an Existing Task**
-  Future<void> editTask(int index, ShowModelClass updatedTask) async {
-    String? userId = getCurrentUserId();
-    if (userId == null) return;
-
-    String taskId = taskList[index].id; // Get task ID
-
-    try {
-      await _firestore
-          .collection("users")
-          .doc(userId)
-          .collection("tasks")
-          .doc(taskId)
-          .update({
-        "title": updatedTask.title,
-        "description": updatedTask.description,
-        "date": updatedTask.date,
-      });
-
-      taskList[index] = updatedTask.copyWith(id: taskId);
-      update();
-      saveTasksToLocal(userId);
-    } catch (e) {
-      print("Error editing task: $e");
     }
   }
 
@@ -124,36 +115,121 @@ class ToDoController extends GetxController {
           .doc(taskId)
           .delete();
       taskList.removeAt(index);
-      saveTasksToLocal(userId);
+      await saveTasksToLocal(userId);
     } catch (e) {
       print("Error deleting task: $e");
     }
   }
 
-  /// **💾 Save Tasks Locally (Per User)**
+  /// **💾 Save Tasks to Local Storage (SQFlite)**
   Future<void> saveTasksToLocal(String userId) async {
-    final prefs = await SharedPreferences.getInstance();
-    List<String> tasks = taskList
-        .map((task) =>
-            "${task.id}|${task.title}|${task.description}|${task.date}")
-        .toList();
-    await prefs.setStringList('tasks_$userId', tasks);
+    if (_database == null) return;
+
+    try {
+      await _database!.delete('tasks',
+          where: "userId = ?", whereArgs: [userId]); // Clear old tasks
+
+      for (var task in taskList) {
+        await _database!.insert(
+          'tasks',
+          {
+            "id": task.id,
+            "userId": userId,
+            "title": task.title,
+            "description": task.description,
+            "date": task.date,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    } catch (e) {
+      print("Error saving tasks locally: $e");
+    }
   }
 
-  /// **🔄 Load Tasks from Local Storage (Per User)**
+  /// **🔄 Load User's Tasks from Local Database**
   Future<void> loadTasksFromLocal(String userId) async {
-    final prefs = await SharedPreferences.getInstance();
-    List<String>? tasks = prefs.getStringList('tasks_$userId');
-    if (tasks != null) {
-      taskList.value = tasks.map((task) {
-        var data = task.split("|");
+    if (_database == null) return;
+
+    try {
+      final List<Map<String, dynamic>> maps = await _database!.query(
+        'tasks',
+        where: "userId = ?",
+        whereArgs: [userId],
+      );
+
+      taskList.value = List.generate(maps.length, (i) {
         return ShowModelClass(
-          id: data[0],
-          title: data[1],
-          description: data[2],
-          date: data[3],
+          id: maps[i]['id'],
+          title: maps[i]['title'],
+          description: maps[i]['description'],
+          date: maps[i]['date'],
         );
-      }).toList();
+      });
+    } catch (e) {
+      print("Error loading tasks from local database: $e");
+    }
+  }
+
+  // Edit Task - Update title and description of a task in Firestore
+ Future<void> editTask(String taskId, String newTitle, String newDesc, {String? newDate}) async {
+  String? userId = getCurrentUserId();
+  if (userId == null) return;
+
+  try {
+    Map<String, dynamic> updatedFields = {
+      'title': newTitle,
+      'description': newDesc,
+    };
+
+    if (newDate != null) {
+      updatedFields['date'] = newDate; // 🟢 Only update if user changed the date
+    }
+
+    await _firestore
+        .collection("users")
+        .doc(userId)
+        .collection("tasks")
+        .doc(taskId)
+        .update(updatedFields);
+
+    // ✅ Update in-memory list
+    int index = taskList.indexWhere((task) => task.id == taskId);
+    if (index != -1) {
+      taskList[index] = taskList[index].copyWith(
+        title: newTitle,
+        description: newDesc,
+        date: newDate ?? taskList[index].date,
+      );
+      await saveTasksToLocal(userId);
+    }
+
+    log("Task updated successfully: $taskId");
+  } catch (e) {
+    log("Error updating task: $e");
+  }
+}
+
+  /// **🔴 Logout User and Clear Tasks**
+  Future<void> logoutUser() async {
+    try {
+      await _auth.signOut();
+      taskList.clear(); // ✅ Clear tasks on logout
+      await clearLocalStorage(); // ✅ Clear local storage
+    } catch (e) {
+      print("Error logging out: $e");
+    }
+  }
+
+  /// **🗑 Clear Local Storage on Logout**
+  Future<void> clearLocalStorage() async {
+    if (_database == null) return;
+    try {
+      await _database!.delete('tasks'); // ✅ Clears stored tasks
+    } catch (e) {
+      print("Error clearing local storage: $e");
     }
   }
 }
+
+//main
