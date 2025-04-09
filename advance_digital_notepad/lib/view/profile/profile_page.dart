@@ -8,7 +8,6 @@ import 'package:advance_digital_notepad/view/home/sign_in.dart';
 import 'package:advance_digital_notepad/view/home/terms_and_condition.dart';
 import 'package:advance_digital_notepad/view/profile/about_us.dart';
 import 'package:advance_digital_notepad/view/profile/edit_profile.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -24,6 +23,7 @@ class _ProfilePageState extends State<ProfilePage> {
   final ThemeController themeController = Get.find<ThemeController>();
   final UserController userController = Get.find<UserController>();
 
+  // Options list
   List<Map<String, dynamic>> options = [
     {
       "title": "Edit Profile",
@@ -41,21 +41,16 @@ class _ProfilePageState extends State<ProfilePage> {
       "icon": Icons.brightness_6_outlined,
       "route": null
     }, // Theme Option
-    {"title": "Logout", "icon": Icons.exit_to_app, "route": const SignInPage()},
+    {
+      "title": "Logout",
+      "icon": Icons.exit_to_app,
+      "route": const SignInPage()
+    },
   ];
 
-  File? _selectedImage;
   final ImagePickerHelper _imagePickerHelper = ImagePickerHelper();
 
-  Future<void> _pickImage() async {
-    File? imageFile =
-        await _imagePickerHelper.pickImageFromGallery(); // Pick from gallery
-    if (imageFile != null) {
-      setState(() {
-        _selectedImage = imageFile; // Update UI with the selected image
-      });
-    }
-  }
+  // Removed _selectedImage and image picking logic since no image editing is allowed here
 
   void _onOptionTap(int index) {
     if (options[index]["title"] == "Theme") {
@@ -68,14 +63,13 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  /// **🌙 Improved Dark & Light Theme Selection Dialog**
+  /// **Improved Dark & Light Theme Selection Dialog**
   void _showThemeDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: themeController.isDarkMode.value
-            ? Colors.grey[900]
-            : Colors.white, // Theme-aware background
+        backgroundColor:
+            themeController.isDarkMode.value ? Colors.grey[900] : Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(15),
         ),
@@ -84,8 +78,7 @@ class _ProfilePageState extends State<ProfilePage> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color:
-                themeController.isDarkMode.value ? Colors.white : Colors.black,
+            color: themeController.isDarkMode.value ? Colors.white : Colors.black,
           ),
         ),
         content: Obx(() => Column(
@@ -98,7 +91,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   activeColor: Colors.blue,
                   onChanged: (value) {
                     themeController.toggleTheme(false);
-                    Navigator.pop(context); // Close dialog on selection
+                    Navigator.pop(context);
                   },
                 ),
                 RadioListTile(
@@ -108,7 +101,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   activeColor: Colors.blue,
                   onChanged: (value) {
                     themeController.toggleTheme(true);
-                    Navigator.pop(context); // Close dialog on selection
+                    Navigator.pop(context);
                   },
                 ),
               ],
@@ -117,14 +110,13 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  /// **🚪 Improved Logout Alert Box**
+  /// **Logout Alert Box**
   void _showLogoutDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: themeController.isDarkMode.value
-            ? Colors.grey[900]
-            : Colors.white, // Dark mode styling
+        backgroundColor:
+            themeController.isDarkMode.value ? Colors.grey[900] : Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(15),
         ),
@@ -133,16 +125,13 @@ class _ProfilePageState extends State<ProfilePage> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color:
-                themeController.isDarkMode.value ? Colors.white : Colors.black,
+            color: themeController.isDarkMode.value ? Colors.white : Colors.black,
           ),
         ),
         content: Text(
           "Are you sure you want to logout?",
           style: TextStyle(
-            color: themeController.isDarkMode.value
-                ? Colors.white70
-                : Colors.black87,
+            color: themeController.isDarkMode.value ? Colors.white70 : Colors.black87,
           ),
         ),
         actions: [
@@ -150,19 +139,14 @@ class _ProfilePageState extends State<ProfilePage> {
             onPressed: () => Navigator.pop(context),
             child: Text("Cancel",
                 style: TextStyle(
-                  color: themeController.isDarkMode.value
-                      ? Colors.grey
-                      : Colors.blue,
+                  color: themeController.isDarkMode.value ? Colors.grey : Colors.blue,
                 )),
           ),
           TextButton(
             onPressed: () {
               FirebaseServices.signOutUser();
-              Navigator.of(context)
-                  .pushReplacement(MaterialPageRoute(builder: (context) {
-                return const SignInPage();
-              })); // Close dialog
-              // ✅ Add your logout logic here
+              Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => const SignInPage()));
             },
             child: const Text("Logout", style: TextStyle(color: Colors.red)),
           ),
@@ -179,113 +163,43 @@ class _ProfilePageState extends State<ProfilePage> {
       body: Column(
         children: [
           SizedBox(height: MediaQuery.of(context).size.height * 0.08),
+          // Profile Image
           Center(
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                // ✅ Profile Image (Dynamically Loaded)
-                Container(
-                  width: MediaQuery.of(context).size.width * 0.4,
-                  height: MediaQuery.of(context).size.width * 0.4,
-                  decoration: const BoxDecoration(shape: BoxShape.circle),
-                  clipBehavior: Clip.antiAlias,
-                  child: Obx(() {
-                    return _selectedImage != null
-                        ? Image.file(
-                            _selectedImage!, // ✅ Show selected image before upload
-                            fit: BoxFit.cover,
-                          )
-                        : userController.profileImage.value.isNotEmpty
-                            ? Image.network(
-                                userController.profileImage
-                                    .value, // ✅ Show uploaded image from Firestore
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Image.asset(
-                                      "assets/images/profile_pic.png",
-                                      fit: BoxFit.cover); // Fallback image
-                                },
-                              )
-                            : Image.asset("assets/images/profile_pic.png",
-                                fit: BoxFit.cover); // Default image
-                  }),
-                ),
-
-                // ✅ Edit Button (Upload New Image)
-                Positioned(
-                  bottom: MediaQuery.of(context).size.width * 0.025,
-                  right: MediaQuery.of(context).size.width * 0.04,
-                  child: GestureDetector(
-                    onTap: () async {
-                      User? user =
-                          FirebaseAuth.instance.currentUser; // Get current user
-
-                      if (user == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Error: User not logged in")),
-                        );
-                        return;
-                      }
-
-                      File? imageFile =
-                          await _imagePickerHelper.pickImageFromGallery();
-                      if (imageFile != null) {
-                        // ✅ Immediately update the UI with selected image before uploading
-                        setState(() {
-                          _selectedImage = imageFile;
-                          userController.profileImage.value =
-                              imageFile.path; // Show selected image instantly
-                        });
-
-                        // ✅ Upload to Firebase
-                        await FirebaseServices.uploadProfileImage(
-                            user.uid, imageFile);
-
-                        // ✅ Fetch updated profile image from Firestore
-                        await userController.fetchUserData();
-                        setState(() {}); // Refresh UI after fetching new data
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Profile picture updated!")),
-                        );
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: themeController.isDarkMode.value
-                            ? Colors.grey[800]
-                            : const Color.fromARGB(255, 243, 242, 228),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.5),
-                            blurRadius: 5,
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        Icons.edit,
-                        color: themeController.isDarkMode.value
-                            ? Colors.white
-                            : Colors.black,
-                        size: MediaQuery.of(context).size.width * 0.06,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.4,
+              height: MediaQuery.of(context).size.width * 0.4,
+              decoration: const BoxDecoration(shape: BoxShape.circle),
+              clipBehavior: Clip.antiAlias,
+              child: Obx(() {
+                // Using profileImagePath which may be a URL or an asset (default)
+                String imgPath = userController.profileImagePath.value;
+                // If the image path is not empty and it does not start with "assets/"
+                if (imgPath.isNotEmpty && !imgPath.startsWith("assets/")) {
+                  File imageFile = File(imgPath);
+                  if (imageFile.existsSync()) {
+                    return Image.file(
+                      imageFile,
+                      fit: BoxFit.cover,
+                    );
+                  } else {
+                    // If file doesn't exist, fall back to the default asset image
+                    return Image.asset("assets/images/profile_pic.png", fit: BoxFit.cover);
+                  }
+                } else {
+                  // Default asset image
+                  return Image.asset("assets/images/profile_pic.png", fit: BoxFit.cover);
+                }
+              }),
             ),
           ),
+          const SizedBox(height: 10),
+          // Profile Name and Email
           Column(
             children: [
               Obx(() => Text(
                     userController.userName.value,
                     style: TextStyle(
-                      color: Get.isDarkMode
-                          ? Colors.white // Light text in dark mode
-                          : const Color.fromARGB(
-                              255, 23, 23, 23), // Dark text in light mode
+                      color: Get.isDarkMode ? Colors.white : const Color.fromARGB(255, 23, 23, 23),
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
@@ -293,16 +207,14 @@ class _ProfilePageState extends State<ProfilePage> {
               Obx(() => Text(
                     userController.email.value,
                     style: TextStyle(
-                      color: Get.isDarkMode
-                          ? Colors.white70 // Slightly dimmed white in dark mode
-                          : const Color.fromARGB(
-                              179, 5, 5, 5), // Dark text in light mode
+                      color: Get.isDarkMode ? Colors.white70 : const Color.fromARGB(179, 5, 5, 5),
                       fontSize: 14,
                     ),
                   )),
             ],
           ),
           SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+          // Options List
           Expanded(
             child: ListView.builder(
               shrinkWrap: true,
@@ -311,20 +223,15 @@ class _ProfilePageState extends State<ProfilePage> {
                 return GestureDetector(
                   onTap: () => _onOptionTap(index),
                   child: Container(
-                    margin: const EdgeInsets.symmetric(
-                        vertical: 10, horizontal: 20),
+                    margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
                     padding: const EdgeInsets.all(15),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(10),
-                      color: themeController.isDarkMode.value
-                          ? Colors.grey[850]
-                          : Colors.grey[200],
+                      color: themeController.isDarkMode.value ? Colors.grey[850] : Colors.grey[200],
                       boxShadow: [
                         BoxShadow(
                           blurRadius: 3,
-                          color: themeController.isDarkMode.value
-                              ? Colors.black26
-                              : Colors.black12,
+                          color: themeController.isDarkMode.value ? Colors.black26 : Colors.black12,
                         ),
                       ],
                     ),
@@ -336,27 +243,23 @@ class _ProfilePageState extends State<ProfilePage> {
                             Icon(
                               options[index]["icon"],
                               size: 30,
-                              color: themeController.isDarkMode.value
-                                  ? Colors.white70
-                                  : Colors.black87,
+                              color: themeController.isDarkMode.value ? Colors.white70 : Colors.black87,
                             ),
                             const SizedBox(width: 15),
                             Text(
                               options[index]["title"],
                               style: GoogleFonts.poppins(
                                 fontSize: 18,
-                                color: themeController.isDarkMode.value
-                                    ? Colors.white
-                                    : Colors.black,
+                                color: themeController.isDarkMode.value ? Colors.white : Colors.black,
                               ),
                             ),
                           ],
                         ),
-                        Icon(Icons.arrow_forward_ios,
-                            size: 20,
-                            color: themeController.isDarkMode.value
-                                ? Colors.white70
-                                : Colors.black87),
+                        Icon(
+                          Icons.arrow_forward_ios,
+                          size: 20,
+                          color: themeController.isDarkMode.value ? Colors.white70 : Colors.black87,
+                        ),
                       ],
                     ),
                   ),
