@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:advance_digital_notepad/controller/image_picker_helper.dart';
 import 'package:advance_digital_notepad/controller/user_controller.dart';
 import 'package:advance_digital_notepad/view/Expense/about_us.dart';
 import 'package:advance_digital_notepad/view/expense/categorie_page.dart';
@@ -22,19 +21,6 @@ class _CustomDrawerState extends State<CustomDrawer> {
   int selectedIndex = 0;
   Color containerColor = Colors.green;
 
-  File? _selectedImage;
-  final ImagePickerHelper _imagePickerHelper = ImagePickerHelper();
-
-  Future<void> _pickImage() async {
-    File? imageFile =
-        await _imagePickerHelper.pickImageFromGallery(); // Pick from gallery
-    if (imageFile != null) {
-      setState(() {
-        _selectedImage = imageFile; // Update UI with the selected image
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -42,6 +28,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
       child: Drawer(
         child: Column(
           children: [
+            // Drawer header with profile image, name, and email
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
@@ -55,50 +42,53 @@ class _CustomDrawerState extends State<CustomDrawer> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Profile Picture
+                  // Profile Picture: just showing image (no tap to pick)
                   CircleAvatar(
-                    radius: 50,
-                    backgroundColor: Colors.white,
-                    child: ClipOval(
-                      child: Obx(() {
-                        return _selectedImage != null
-                            ? Image.file(
-                                _selectedImage!,
-                                width:
-                                    100, // Ensure it fits within the CircleAvatar
-                                height: 100,
-                                fit: BoxFit.cover,
-                              )
-                            : userController.profileImage.value.isNotEmpty
-                                ? Image.network(
-                                    userController.profileImage.value,
-                                    width: 100,
-                                    height: 100,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Image.asset(
-                                        "assets/images/profile_pic.png",
-                                        width: 100,
-                                        height: 100,
-                                        fit: BoxFit.cover,
-                                      ); // Fallback image
-                                    },
-                                  )
-                                : Image.asset(
-                                    "assets/images/profile_pic.png",
-                                    width: 100,
-                                    height: 100,
-                                    fit: BoxFit.cover,
-                                  ); // Default image
-                      }),
-                    ),
+                    radius: 55,
+                    backgroundColor: Get.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300,
+                    child: Obx(() {
+                      String imagePath = userController.profileImagePath.value;
+                      // If the image path doesn't start with "assets/", then assume it's a local file
+                      if (imagePath.isNotEmpty && !imagePath.startsWith("assets/")) {
+                        File imageFile = File(imagePath);
+                        if (imageFile.existsSync()) {
+                          return ClipOval(
+                            child: Image.file(
+                              imageFile,
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.cover,
+                            ),
+                          );
+                        } else {
+                          // If file doesn't exist, show the default asset image
+                          return ClipOval(
+                            child: Image.asset(
+                              "assets/images/profile_pic.png",
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.cover,
+                            ),
+                          );
+                        }
+                      } else {
+                        // Default asset image
+                        return ClipOval(
+                          child: Image.asset(
+                            "assets/images/profile_pic.png",
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                          ),
+                        );
+                      }
+                    }),
                   ),
                   const SizedBox(height: 10),
-
                   // Profile Name
                   Obx(
                     () => Text(
-                      "${userController.userName}",
+                      userController.userName.value,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
@@ -106,11 +96,10 @@ class _CustomDrawerState extends State<CustomDrawer> {
                       ),
                     ),
                   ),
-
                   // Profile Email
                   Obx(
                     () => Text(
-                      "${userController.email}",
+                      userController.email.value,
                       style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 14,
@@ -121,21 +110,20 @@ class _CustomDrawerState extends State<CustomDrawer> {
               ),
             ),
             const SizedBox(height: 10),
+            // Drawer items
             Expanded(
               child: ListView(
                 padding: EdgeInsets.zero,
                 children: [
                   buildDrawerItem(context, "Transaction",
                       Icons.attach_money_outlined, 0, const ExpenseManager()),
-                  buildDrawerItem(context, "Graphs", Icons.pie_chart_outline, 1,
-                      const GraphPage()),
-                  buildDrawerItem(context, "Category", Icons.category_outlined,
-                      2, const CategoriePage()),
-                  buildDrawerItem(context, "About Us", Icons.info_outline, 3,
-                      const AboutUsPage()),
+                  buildDrawerItem(context, "Graphs", Icons.pie_chart_outline, 1, const GraphPage()),
+                  buildDrawerItem(context, "Category", Icons.category_outlined, 2, const CategoriePage()),
+                  buildDrawerItem(context, "About Us", Icons.info_outline, 3, const AboutUsPage()),
                 ],
               ),
             ),
+            // Back button
             GestureDetector(
               onTap: () {
                 setState(() {
@@ -148,8 +136,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
                 );
               },
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
                 decoration: BoxDecoration(
                   color: containerColor,
                   borderRadius: BorderRadius.circular(10),
@@ -176,8 +163,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
     );
   }
 
-  Widget buildDrawerItem(BuildContext context, String title, IconData icon,
-      int index, Widget? page) {
+  Widget buildDrawerItem(BuildContext context, String title, IconData icon, int index, Widget? page) {
     bool isSelected = selectedIndex == index;
 
     return InkWell(
@@ -200,8 +186,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
           borderRadius: BorderRadius.circular(15),
         ),
         child: ListTile(
-          leading: Icon(icon,
-              color: isSelected ? Colors.green[700] : Colors.grey[700]),
+          leading: Icon(icon, color: isSelected ? Colors.green[700] : Colors.grey[700]),
           title: Text(
             title,
             style: TextStyle(

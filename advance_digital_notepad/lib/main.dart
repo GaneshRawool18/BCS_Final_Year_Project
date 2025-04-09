@@ -1,3 +1,4 @@
+import 'package:advance_digital_notepad/controller/todo_controller.dart';
 import 'package:advance_digital_notepad/view/home/home_page.dart';
 import 'package:advance_digital_notepad/view/home/splash_screen.dart';
 import 'package:advance_digital_notepad/controller/user_controller.dart';
@@ -11,7 +12,6 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
       options: const FirebaseOptions(
-        
           apiKey: "AIzaSyDhn-xgiBB5HQ2_dfejFAHVKtassWRjUmw",
           appId: "1:76751527402:android:a36c6711d7067b04ade693",
           messagingSenderId: "76751527402",
@@ -23,6 +23,7 @@ Future<void> main() async {
   // ✅ Ensure controllers are initialized before running the app
   Get.put(UserController());
   Get.put(ThemeController()); // ✅ Initialize ThemeController here
+  Get.put(ToDoController());
 
   runApp(MainApp(isLoggedIn: isLoggedIn));
 }

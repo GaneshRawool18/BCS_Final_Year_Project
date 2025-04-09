@@ -11,8 +11,13 @@ class ShowModelClass {
     required this.date,
   });
 
-  // Method to create a copy with new values
-  ShowModelClass copyWith({String? id, String? title, String? description, String? date}) {
+  // ✅ Corrected copyWith method
+  ShowModelClass copyWith({
+    String? id,
+    String? title,
+    String? description,
+    String? date,
+  }) {
     return ShowModelClass(
       id: id ?? this.id,
       title: title ?? this.title,
