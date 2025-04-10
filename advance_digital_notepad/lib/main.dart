@@ -1,3 +1,4 @@
+import 'package:advance_digital_notepad/controller/notification_service.dart';
 import 'package:advance_digital_notepad/controller/todo_controller.dart';
 import 'package:advance_digital_notepad/view/home/home_page.dart';
 import 'package:advance_digital_notepad/view/home/splash_screen.dart';
@@ -19,7 +20,7 @@ Future<void> main() async {
 
   final prefs = await SharedPreferences.getInstance();
   bool isLoggedIn = prefs.getBool('is_logged_in') ?? false;
-
+  await NotificationService().init();
   // ✅ Ensure controllers are initialized before running the app
   Get.put(UserController());
   Get.put(ThemeController()); // ✅ Initialize ThemeController here

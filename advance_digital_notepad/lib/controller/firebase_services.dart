@@ -6,7 +6,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../controller/user_controller.dart';
 
@@ -169,4 +168,121 @@ class FirebaseServices {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('user_email');
   }
+
+  //main 
+
+   // --------------------------
+  // Group Community Methods
+  // --------------------------
+
+  /// Creates a new group in the "groups" collection.
+  static Future<DocumentReference> createGroup(String groupName) async {
+    try {
+      DocumentReference groupDoc =
+          await FirebaseFirestore.instance.collection('groups').add({
+        'groupName': groupName,
+        'createdBy': getCurrentUserId(),
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+      log("Group created: ${groupDoc.id}");
+      return groupDoc;
+    } catch (e) {
+      log("Error creating group: $e");
+      rethrow;
+    }
+  }
+
+  /// Adds current user as a member in the group subcollection "members"
+  static Future<void> joinGroup(String groupId) async {
+    try {
+      final uid = getCurrentUserId();
+      if (uid == null) throw Exception("User not logged in");
+
+      // Save member details (userId, joinTime)
+      await FirebaseFirestore.instance
+          .collection('groups')
+          .doc(groupId)
+          .collection('members')
+          .doc(uid)
+          .set({
+        'userId': uid,
+        'joinTime': FieldValue.serverTimestamp(),
+      });
+      log("User $uid joined group $groupId");
+    } catch (e) {
+      log("Error joining group: $e");
+      rethrow;
+    }
+  }
+
+  /// Sends a message to a group. Each group document has a subcollection "messages".
+  static Future<void> sendMessageToGroup({
+    required String groupId,
+    required String message,
+  }) async {
+    try {
+      String? senderId = getCurrentUserId();
+      if (senderId == null) throw Exception("User not logged in");
+
+      await FirebaseFirestore.instance
+          .collection('groups')
+          .doc(groupId)
+          .collection('messages')
+          .add({
+        'senderId': senderId,
+        'message': message,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+      log("Message sent to group $groupId");
+    } catch (e) {
+      log("Error sending message to group: $e");
+      rethrow;
+    }
+  }
+
+  /// Retrieves a stream of messages from a given group ordered by timestamp.
+  static Stream<QuerySnapshot> streamGroupMessages(String groupId) {
+    return FirebaseFirestore.instance
+        .collection('groups')
+        .doc(groupId)
+        .collection('messages')
+        .orderBy('timestamp', descending: false)
+        .snapshots();
+  }
+
+  /// Retrieves a stream of groups for listing in the community page.
+  static Stream<QuerySnapshot> streamGroups() {
+    return FirebaseFirestore.instance
+        .collection('groups')
+        .orderBy('timestamp', descending: true)
+        .snapshots();
+  }
+
+  /// Retrieves user details for a given userId (e.g., name, profileImage)
+  static Future<DocumentSnapshot> getUserDetails(String userId) async {
+    return await FirebaseFirestore.instance.collection('users').doc(userId).get();
+  }
+  /// Retrieves a stream of members in a group.
+  static Stream<QuerySnapshot> streamGroupMembers(String groupId) {
+    return FirebaseFirestore.instance
+        .collection('groups')
+        .doc(groupId)
+        .collection('members')
+        .snapshots();
+  }
+
+  /// Retrieves a stream of groups the current user is a member of.
+  static Stream<QuerySnapshot> streamUserGroups() {
+    String? uid = getCurrentUserId();
+    if (uid == null) {
+      throw Exception("User not logged in");
+    }
+    return FirebaseFirestore.instance
+        .collection('groups')
+        .where('members.$uid', isEqualTo: true)
+        .snapshots();
+  }
+
 }
+
+  

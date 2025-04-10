@@ -47,28 +47,29 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text("Home",
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
         actions: [
-          Container(
-            margin: EdgeInsets.only(
-                right: MediaQuery.of(context).size.width * 0.03),
-            padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.01),
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: Color.fromARGB(255, 220, 222, 222),
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.notifications, size: 22),
-              onPressed: () {
-                Get.to(() => const NotificationPage());
-              },
-            ),
-          ),
-          // Calendar button toggles calendar view.
+          // Container(
+          //   margin: EdgeInsets.only(
+          //       right: MediaQuery.of(context).size.width * 0.03),
+          //   padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.01),
+          //   decoration: const BoxDecoration(
+          //     shape: BoxShape.circle,
+          //     color: Color.fromARGB(255, 220, 222, 222),
+          //   ),
+          //   child: IconButton(
+          //     icon: const Icon(Icons.notifications, size: 22),
+          //     onPressed: () {
+          //       Get.to(() => const NotificationPage());
+          //     },
+          //   ),
+          // ),
+          // // Calendar button toggles calendar view.
           IconButton(
             icon: const Icon(Icons.calendar_today, size: 28),
             onPressed: () {
               calendarController.toggleCalendar();
             },
           ),
+          
         ],
       ),
       body: Column(
